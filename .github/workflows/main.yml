@@ -11,10 +11,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          filesizelimit: 50MB # this is 10MB
+          filesizelimit: 50MB # this is 50MB
           fetch-depth: 0
-          lfs: true
+          lfs: true 
       - name: Push to hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: git push https://Rsnarsna:$HF_TOKEN@huggingface.co/spaces/Rsnarsna/advanced-multi-hop-rag main
+        run: git push https://huggingface.co/spaces/Rsnarsna/advanced-multi-hop-rag main
