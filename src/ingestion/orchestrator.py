@@ -1,6 +1,13 @@
 import asyncio
 from pathlib import Path
-from langchain_community.document_loaders import TextLoader, PyPDFLoader
+from langchain_community.document_loaders import (
+    TextLoader, 
+    PyPDFLoader,
+    BSHTMLLoader,
+    Docx2txtLoader,
+    CSVLoader,
+    UnstructuredMarkdownLoader
+)
 from src.ingestion.chunker import create_chunks
 from src.ingestion.extractor import parse_with_llm
 from src.ingestion.vector_db import setup_pgvector_tables, batch_insert_chunks
@@ -26,12 +33,30 @@ async def ingest_document(file_path: str) -> Dict[str, Any]:
         raise FileNotFoundError(f"File not found: {file_path}")
         
     logger.info("Loading document content...")
-    if path.suffix == ".pdf":
-        loader = PyPDFLoader(str(path))
-    else:
-        loader = TextLoader(str(path))
+    suffix = path.suffix.lower()
+    
+    loader_mapping = {
+        ".pdf": PyPDFLoader,
+        ".txt": TextLoader,
+        ".html": BSHTMLLoader,
+        ".htm": BSHTMLLoader,
+        ".docx": Docx2txtLoader,
+        ".csv": CSVLoader,
+        ".md": UnstructuredMarkdownLoader
+    }
+    
+    if suffix not in loader_mapping:
+        raise ValueError(f"Unsupported file extension: {suffix}")
+        
+    loader_class = loader_mapping[suffix]
+    loader = loader_class(str(path))
     
     docs = loader.load()
+    
+    # If a loader generates multiple docs (e.g. per page), we consolidate them
+    # to ensure our chunker gets the full text.
+    full_text = "\n\n".join([doc.page_content for doc in docs])
+    
     doc_id = path.stem # Use filename as the root document ID
     logger.info(f"Loaded document. Assigned root doc_id: '{doc_id}'")
 
@@ -42,7 +67,7 @@ async def ingest_document(file_path: str) -> Dict[str, Any]:
     # 3. Chunk Document
     # We chunk locally so we don't overwhelm the Mistral extraction context window
     logger.info("Applying Semantic Chunking...")
-    text_chunks = create_chunks(docs[0].page_content)
+    text_chunks = create_chunks(full_text)
     logger.info(f"Split document into {len(text_chunks)} distinct chunks.")
     
     # 4. Process each chunk

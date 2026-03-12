@@ -62,8 +62,9 @@ async def batch_insert_chunks(doc_id: str, chunks: List[Dict[str, Any]]):
                 VALUES ($1, $2, $3, $4, $5)
             """, records)
             
-async def semantic_search(query_embedding: List[float], top_k: int = 5) -> List[Dict[str, Any]]:
+async def semantic_search(query_embedding: List[float], top_k: int = None) -> List[Dict[str, Any]]:
     """Performs a vector search and returns the top_k matching chunks."""
+    limit = top_k if top_k is not None else Config.TOP_K_RESULTS
     pool = await Config.get_pg_pool()
     embedding_str = json.dumps(query_embedding)
     
@@ -74,6 +75,13 @@ async def semantic_search(query_embedding: List[float], top_k: int = 5) -> List[
             FROM document_chunks
             ORDER BY embedding <=> $1
             LIMIT $2;
-        """, embedding_str, top_k)
+        """, embedding_str, limit)
         
         return [dict(row) for row in rows]
+
+async def clear_all_vectors():
+    """Wipes all data from the document_chunks table."""
+    pool = await Config.get_pg_pool()
+    async with pool.acquire() as conn:
+        await conn.execute("TRUNCATE TABLE document_chunks;")
+

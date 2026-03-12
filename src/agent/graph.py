@@ -2,6 +2,7 @@ from langgraph.graph import StateGraph, END
 from src.agent.state import AgentState
 from src.agent.nodes import router_node, decomposer_node, evaluator_node, synthesizer_node
 from src.agent.retrievers import hybrid_retriever_node
+from src.config import Config
 
 def check_sufficiency_or_hop(state: AgentState):
     """
@@ -9,8 +10,8 @@ def check_sufficiency_or_hop(state: AgentState):
     """
     hop_count = state.get("hop_count", 0)
     
-    # We enforce a strict max 3 hops limit to prevent explosive latency
-    if hop_count >= 3:
+    # We enforce a strict max hop limit from config to prevent explosive latency
+    if hop_count >= Config.MAX_HOP_COUNT:
         return "synthesize"
     else:
         return "evaluator"

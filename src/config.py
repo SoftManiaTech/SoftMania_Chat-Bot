@@ -14,15 +14,25 @@ NEO4J_USERNAME = os.getenv("NEO4J_USERNAME", "neo4j")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
 NEO4J_DATABASE = os.getenv("NEO4J_DATABASE", NEO4J_USERNAME)
 
-# OpenAI Settings
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
 # Mistral Settings
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 
 class Config:
     _neo4j_graph = None
     _pg_pool = None
+    
+    # Central LLM Configurations
+    PRIMARY_LLM_MODEL = "mistral-large-latest"
+    EMBEDDING_MODEL = "mistral-embed"
+    DEFAULT_TEMPERATURE = 0.2
+    
+    # Ingestion Parameters
+    CHUNK_SIZE = 1000
+    CHUNK_OVERLAP = 200
+    
+    # Retrieval & Reasoning Parameters
+    TOP_K_RESULTS = 5
+    MAX_HOP_COUNT = 3
 
     @classmethod
     def get_neo4j_graph(cls):
@@ -57,13 +67,13 @@ class Config:
             await cls._pg_pool.close()
 
     @classmethod
-    def get_llm(cls, temperature: float = 0.0):
+    def get_llm(cls, temperature: float = None):
         """Returns the configured LLM instance for extraction and reasoning."""
         from langchain_mistralai import ChatMistralAI
-        # Using Mistral's flagship model
+        temp = temperature if temperature is not None else cls.DEFAULT_TEMPERATURE
         return ChatMistralAI(
-            model="mistral-large-latest", 
-            temperature=temperature, 
+            model=cls.PRIMARY_LLM_MODEL, 
+            temperature=temp, 
             api_key=MISTRAL_API_KEY
         )
 
@@ -72,6 +82,6 @@ class Config:
         """Returns the configured Embeddings instance."""
         from langchain_mistralai import MistralAIEmbeddings
         return MistralAIEmbeddings(
-            model="mistral-embed", 
+            model=cls.EMBEDDING_MODEL, 
             api_key=MISTRAL_API_KEY
         )

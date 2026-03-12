@@ -1,9 +1,9 @@
 import os
 from typing import Dict, Any
-from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
 from src.agent.state import AgentState
 from src.config import Config
+from src.prompts import ROUTER_PROMPT, DECOMPOSER_PROMPT, EVALUATOR_PROMPT, SYNTHESIZER_PROMPT
 
 class RouteDecision(BaseModel):
     is_complex: bool = Field(description="True if the question requires synthesizing multiple pieces of information or multi-hop reasoning. False if simple.")
@@ -14,17 +14,17 @@ class SubQueries(BaseModel):
 class EvaluationDecision(BaseModel):
     is_sufficient: bool = Field(description="True if the context fully answers the question, False otherwise.")
 
+class FinalAnswer(BaseModel):
+    answer: str = Field(description="The complete, helpful, and safe answer to the user's query.")
+    citations: list[str] = Field(description="List of document citations used, empty if none.")
+
 def get_llm():
     return Config.get_llm(temperature=0.0)
 
 async def router_node(state: AgentState) -> Dict[str, Any]:
     """Classifies if the query needs multi-hop decomposition."""
     llm = get_llm()
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are an expert query analyzer. Determine if the user's question requires multi-hop reasoning or is simple."),
-        ("human", "{question}")
-    ])
-    chain = prompt | llm.with_structured_output(RouteDecision)
+    chain = ROUTER_PROMPT | llm.with_structured_output(RouteDecision)
     decision = await chain.ainvoke({"question": state["question"]})
     return {"is_complex": decision.is_complex, "hop_count": 0}
 
@@ -34,11 +34,7 @@ async def decomposer_node(state: AgentState) -> Dict[str, Any]:
         return {"sub_queries": [state["question"]]}
         
     llm = get_llm()
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "Break this complex question down into 2-3 isolated sub-questions that can be searched independently."),
-        ("human", "{question}")
-    ])
-    chain = prompt | llm.with_structured_output(SubQueries)
+    chain = DECOMPOSER_PROMPT | llm.with_structured_output(SubQueries)
     result = await chain.ainvoke({"question": state["question"]})
     return {"sub_queries": result.queries}
 
@@ -46,11 +42,7 @@ async def evaluator_node(state: AgentState) -> Dict[str, Any]:
     """Evaluates if the currently retrieved context is enough to answer the original question."""
     llm = get_llm()
     context_str = "\n".join(state.get("retrieved_context", []))
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "Based on the context, can we fully answer the user's question? If Yes, set is_sufficient to True."),
-        ("human", "Question: {question}\n\nContext: {context}")
-    ])
-    chain = prompt | llm.with_structured_output(EvaluationDecision)
+    chain = EVALUATOR_PROMPT | llm.with_structured_output(EvaluationDecision)
     result = await chain.ainvoke({"question": state["question"], "context": context_str})
     
     # We update hop_count here as it represents one full retrieval cycle evaluation
@@ -62,11 +54,26 @@ async def evaluator_node(state: AgentState) -> Dict[str, Any]:
 async def synthesizer_node(state: AgentState) -> Dict[str, Any]:
     """Synthesizes the final answer using all retrieved contexts."""
     llm = get_llm()
-    context_str = "\n\n".join(state.get("retrieved_context", []))
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are an expert AI answering questions based on the provided context. Use inline citations (e.g. [doc_id: chunk_id]) if possible."),
-        ("human", "Question: {question}\n\nContext: {context}")
+    
+    # GUARDRAIL: Strict output parsing with automated fallback to a zero-temperature strict model
+    safe_llm = Config.get_llm(temperature=0.0)
+    structured_llm = llm.with_structured_output(FinalAnswer).with_fallbacks([
+        safe_llm.with_structured_output(FinalAnswer)
     ])
-    chain = prompt | llm
-    result = await chain.ainvoke({"question": state["question"], "context": context_str})
-    return {"final_answer": result.content}
+    
+    context_str = "\n\n".join(state.get("retrieved_context", []))
+    chain = SYNTHESIZER_PROMPT | structured_llm
+    
+    try:
+        result = await chain.ainvoke({"question": state["question"], "context": context_str})
+        if not result:
+            raise ValueError("LLM returned empty structured output.")
+    except Exception as e:
+        # Fallback if both the primary and fallback LLMs fail parsing (e.g. complete injection failure)
+        return {"final_answer": "I apologize, but I am unable to safely process or retrieve an answer for that request. (Safety Guardrail Triggered)"}
+    
+    final_output = result.answer
+    if result.citations:
+        final_output += f"\n\nSources: {', '.join(result.citations)}"
+        
+    return {"final_answer": final_output}

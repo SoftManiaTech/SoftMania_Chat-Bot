@@ -2,6 +2,7 @@ import uuid
 from typing import List
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from src.config import Config
 
 def create_chunks(text: str, doc_id: str = None) -> List[Document]:
     """
@@ -12,8 +13,8 @@ def create_chunks(text: str, doc_id: str = None) -> List[Document]:
         doc_id = str(uuid.uuid4())
         
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200,
+        chunk_size=Config.CHUNK_SIZE,
+        chunk_overlap=Config.CHUNK_OVERLAP,
         separators=["\n\n", "\n", " ", ""]
     )
     

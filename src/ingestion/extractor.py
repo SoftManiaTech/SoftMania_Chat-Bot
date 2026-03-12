@@ -3,6 +3,7 @@ from typing import List, Tuple
 from langchain_core.documents import Document
 from src.schema import KnowledgeGraphExtraction
 from src.config import Config
+from src.prompts import KNOWLEDGE_GRAPH_EXTRACTION_PROMPT
 
 def parse_with_llm(documents: List[Document]) -> List[Tuple[str, str, KnowledgeGraphExtraction]]:
     """
@@ -19,15 +20,8 @@ def parse_with_llm(documents: List[Document]) -> List[Tuple[str, str, KnowledgeG
     
     for doc in documents:
         text = doc.page_content
-        # Basic context prompt
-        prompt = f"""
-        Extract all entities and relationships from the following text based on this strict ontology.
-        Nodes MUST be one of: Person, Company, Event, Concept, Document.
-        Relationships can be dynamic and specific (e.g. ACQUIRED, INVESTED_IN, WORKS_AT, DISCOVERED).
-        
-        Text:
-        {text}
-        """
+        # Use the centralized context prompt
+        prompt = KNOWLEDGE_GRAPH_EXTRACTION_PROMPT.format(text=text)
         try:
             # We assume it's synchronous for now during ingestion batching
             result = extractor_chain.invoke(prompt)

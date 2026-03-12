@@ -48,3 +48,9 @@ async def batch_insert_graph(doc_id: str, chunk_id: str, extraction: KnowledgeGr
                 "properties": json.dumps(rel.properties)
             }
         )
+
+async def clear_all_graph_data():
+    """Wipes all nodes and relationships from the Neo4j Graph database."""
+    graph = Config.get_neo4j_graph()
+    graph.query("MATCH (n) DETACH DELETE n")
+
