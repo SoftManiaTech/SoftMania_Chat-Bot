@@ -13,10 +13,10 @@ from src.ingestion.extractor import parse_with_llm
 from src.ingestion.vector_db import setup_pgvector_tables, batch_insert_chunks
 from src.ingestion.graph_db import batch_insert_graph
 from src.config import Config
-import logging
 from typing import Dict, Any
+from src.logger import setup_logger
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__)
 
 async def ingest_document(file_path: str) -> Dict[str, Any]:
     """

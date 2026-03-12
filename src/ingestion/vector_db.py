@@ -35,6 +35,17 @@ async def setup_pgvector_tables():
             CREATE INDEX IF NOT EXISTS document_chunks_doc_id_idx ON document_chunks (doc_id);
             CREATE INDEX IF NOT EXISTS document_chunks_chunk_id_idx ON document_chunks (chunk_id);
         """)
+        
+        # Create Query Logs table (Persistent)
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS query_logs (
+                id SERIAL PRIMARY KEY,
+                question TEXT NOT NULL,
+                answer TEXT NOT NULL,
+                hop_count INTEGER NOT NULL,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
 
 async def batch_insert_chunks(doc_id: str, chunks: List[Dict[str, Any]]):
     """
@@ -84,4 +95,13 @@ async def clear_all_vectors():
     pool = await Config.get_pg_pool()
     async with pool.acquire() as conn:
         await conn.execute("TRUNCATE TABLE document_chunks;")
+
+async def insert_query_log(question: str, answer: str, hop_count: int):
+    """Inserts a persistent log of a user query and the RAG response."""
+    pool = await Config.get_pg_pool()
+    async with pool.acquire() as conn:
+        await conn.execute("""
+            INSERT INTO query_logs (question, answer, hop_count)
+            VALUES ($1, $2, $3)
+        """, question, answer, hop_count)
 

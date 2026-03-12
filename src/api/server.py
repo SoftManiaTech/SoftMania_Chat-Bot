@@ -4,8 +4,11 @@ from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from src.agent.graph import graph_app
 from src.ingestion.orchestrator import ingest_document
-from src.ingestion.vector_db import clear_all_vectors
+from src.ingestion.vector_db import clear_all_vectors, insert_query_log
 from src.ingestion.graph_db import clear_all_graph_data
+from src.logger import setup_logger
+
+logger = setup_logger(__name__)
 
 app = FastAPI(title="Advanced Multi-Hop RAG API")
 
@@ -42,6 +45,7 @@ async def ingest_file(file: UploadFile = File(...)):
             detail=f"Unsupported Media Type: {file.content_type}. Please upload text, pdf, html, csv, or docx."
         )
         
+    logger.info(f"--- API REQUEST: /ingest --- Received file: {file.filename}")
     try:
         # Create a temp directory for uploads if it doesn't exist
         upload_dir = "uploads"
@@ -61,13 +65,16 @@ async def ingest_file(file: UploadFile = File(...)):
             os.remove(file_path)
             
         # result returns {"status": "completed", ...} as requested
+        logger.info(f"--- API RESPONSE: /ingest --- Successfully ingested: {file.filename}")
         return result
         
     except Exception as e:
+        logger.error(f"--- API ERROR: /ingest --- {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/query", response_model=QueryResponse)
 async def query_rag(request: QueryRequest):
+    logger.info(f"--- API REQUEST: /query --- Question: '{request.question}'")
     try:
         # We start the LangGraph with just the question.
         initial_state = {"question": request.question, "hop_count": 0, "retrieved_context": []}
@@ -76,11 +83,19 @@ async def query_rag(request: QueryRequest):
         # This will trace automatically via LangSmith if LANGCHAIN_TRACING_V2 is set
         result = await graph_app.ainvoke(initial_state)
         
+        answer = result.get("final_answer", "No answer generated.")
+        hop_count = result.get("hop_count", 0)
+        
+        # Log the request/response pair into the un-deletable table
+        await insert_query_log(request.question, answer, hop_count)
+        
+        logger.info(f"--- API RESPONSE: /query --- Generated answer in {hop_count} hops.")
         return QueryResponse(
-            answer=result.get("final_answer", "No answer generated."),
-            hop_count=result.get("hop_count", 0)
+            answer=answer,
+            hop_count=hop_count
         )
     except Exception as e:
+        logger.error(f"--- API ERROR: /query --- {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/clear")

@@ -16,12 +16,15 @@ def pre_download_models():
     try:
         from huggingface_hub import snapshot_download
         print("Verifying and pre-loading Hugging Face dependencies locally...")
+        # --- WHICH MODEL ARE WE DOWNLOADING? ---
+        # While we use the Mistral API for generation, the LangChain text splitters 
+        # (RecursiveCharacterTextSplitter) need a LOCAL tokenizer to accurately count
+        # how many "tokens" fit into our 1000 CHUNK_SIZE limit. 
+        # We download the 'e5-mistral' tokenizer because it mathematically perfectly 
+        # aligns with the 'mistral-embed' API endpoint we use in src/config.py!
+        model_id = "intfloat/e5-mistral-7b-instruct" 
         
-        # We specify the exact model ID that langchain or other libs implicitly need.
-        # Often this is a tokenizer like standard mistral, or sentence-transformers
-        model_id = "mistralai/Mistral-7B-Instruct-v0.2" # Adjust if you use a specific local embedding model
-        
-        # Download only the Tokenizer config to prevent huge 14GB bin downloads
+        # Download strictly the Tokenizer configuration files (ignores the huge 14GB weights)
         snapshot_download(
             repo_id=model_id, 
             allow_patterns=["*.json", "*.model", "tokenizer*"], 
@@ -48,7 +51,7 @@ def main():
     host = os.environ.get("HOST", "0.0.0.0")
     
     # We pass the application instance string for hot-reloading 
-    uvicorn.run("main:app", host=host, port=port)
+    uvicorn.run("main:app", host=host, port=port, reload=True)
 
 if __name__ == "__main__":
     main()

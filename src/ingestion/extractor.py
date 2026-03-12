@@ -4,6 +4,9 @@ from langchain_core.documents import Document
 from src.schema import KnowledgeGraphExtraction
 from src.config import Config
 from src.prompts import KNOWLEDGE_GRAPH_EXTRACTION_PROMPT
+from src.logger import setup_logger
+
+logger = setup_logger(__name__)
 
 def parse_with_llm(documents: List[Document]) -> List[Tuple[str, str, KnowledgeGraphExtraction]]:
     """
@@ -27,7 +30,7 @@ def parse_with_llm(documents: List[Document]) -> List[Tuple[str, str, KnowledgeG
             result = extractor_chain.invoke(prompt)
             extractions.append((doc.metadata["doc_id"], doc.metadata["chunk_id"], result))
         except Exception as e:
-            print(f"Failed extraction on chunk {doc.metadata.get('chunk_id')}: {e}")
+            logger.error(f"Failed extraction on chunk {doc.metadata.get('chunk_id')}: {e}")
             # Real implementation would have a retry loop or fallback chain
             
     return extractions

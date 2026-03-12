@@ -3,6 +3,9 @@ from src.agent.state import AgentState
 from src.agent.nodes import router_node, decomposer_node, evaluator_node, synthesizer_node
 from src.agent.retrievers import hybrid_retriever_node
 from src.config import Config
+from src.logger import setup_logger
+
+logger = setup_logger(__name__)
 
 def check_sufficiency_or_hop(state: AgentState):
     """
@@ -12,8 +15,10 @@ def check_sufficiency_or_hop(state: AgentState):
     
     # We enforce a strict max hop limit from config to prevent explosive latency
     if hop_count >= Config.MAX_HOP_COUNT:
+        logger.warning(f"--- GRAPH EDGE --- Max Hop Count ({Config.MAX_HOP_COUNT}) Reached! Forcing Synthesis.")
         return "synthesize"
     else:
+        logger.info(f"--- GRAPH EDGE --- Routing to Evaluator to check context (Hop: {hop_count})")
         return "evaluator"
 
 # Build the Graph
@@ -43,10 +48,18 @@ workflow.add_conditional_edges(
     }
 )
 
+def evaluate_sufficiency_edge(state: AgentState):
+    if state.get("is_sufficient", False):
+        logger.info("--- GRAPH EDGE --- Context Sufficient! Routing to Synthesizer.")
+        return "synthesize"
+    else:
+        logger.info("--- GRAPH EDGE --- Context Insufficient! Routing back to Decomposer for more data.")
+        return "decomposer"
+
 # After evaluating, we synthesize if possible, else decompose new questions based on missing gaps
 workflow.add_conditional_edges(
     "evaluator",
-    lambda state: "synthesize" if state.get("is_sufficient", False) else "decomposer",
+    evaluate_sufficiency_edge,
     {
         "synthesize": "synthesizer",
         "decomposer": "decomposer" 
