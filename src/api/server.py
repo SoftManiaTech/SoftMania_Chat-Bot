@@ -30,6 +30,11 @@ ALLOWED_MIME_TYPES = {
     "text/xml"
 }
 
+@app.get("/")
+async def health_check():
+    """Root endpoint for container health checks (required by Hugging Face Spaces)."""
+    return {"status": "healthy", "service": "Advanced Multi-Hop RAG API"}
+
 @app.post("/ingest")
 async def ingest_file(file: UploadFile = File(...)):
     """
