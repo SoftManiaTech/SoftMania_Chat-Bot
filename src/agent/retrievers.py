@@ -5,14 +5,14 @@ from src.agent.state import AgentState
 from src.ingestion.vector_db import semantic_search
 from src.config import Config
 
-embeddings = Config.get_embeddings()
-
 async def hybrid_retriever_node(state: AgentState) -> Dict[str, Any]:
     """
     Executes parallel sub-queries hitting both Neon PGVector and Neo4j.
     It performs semantic search, uses the returned doc_ids and chunk_ids to 
     traverse the Knowledge Graph, pulling linked entities 1-hop away.
     """
+    embeddings = Config.get_embeddings()
+    
     sub_queries = state.get("sub_queries", [])
     if not sub_queries:
         sub_queries = [state.get("question", "")]
