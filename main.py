@@ -47,11 +47,12 @@ def main():
     pre_download_models()
     
     # 3. Start Server
-    port = int(os.environ.get("PORT", 9000))
+    # Hugging Face provides a dynamic PORT OR defaults to 7860
+    port = int(os.environ.get("PORT", 7860))
     host = os.environ.get("HOST", "0.0.0.0")
     
     # We pass the application instance string for hot-reloading 
-    uvicorn.run("main:app", host=host, port=port, reload=True)
+    uvicorn.run("main:app", host=host, port=port)
 
 if __name__ == "__main__":
     main()

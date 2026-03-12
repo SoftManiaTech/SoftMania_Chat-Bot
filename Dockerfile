@@ -49,4 +49,6 @@ COPY . /app
 
 EXPOSE 7860
 
-CMD ["/bin/sh", "-c", "uvicorn src.api.server:app --host 0.0.0.0 --port ${PORT:-7860}"]
+# We use main.py as the entry point because it runs our critical pre_download_models()
+# caching script before starting Uvicorn, which prevents the Space from freezing.
+CMD ["python", "main.py"]
