@@ -35,7 +35,7 @@ WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        libopenblas0 \
-       liblapack0 \
+       liblapack3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy prebuilt wheels from builder and install from them (fast, deterministic)
