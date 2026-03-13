@@ -1,0 +1,2044 @@
+[
+  {
+    "doc_id": "softmania_master_dataset",
+    "chunk_id": "softmania_master_dataset_chunk_0",
+    "nodes": [
+      {
+        "id": "SOFTMANIA",
+        "type": "Company",
+        "properties": {
+          "source_url": "https://www.softmania.in/about"
+        }
+      },
+      {
+        "id": "SOFTWARE_DEVELOPMENT",
+        "type": "Concept",
+        "properties": {}
+      },
+      {
+        "id": "DIGITAL_TRANSFORMATION",
+        "type": "Concept",
+        "properties": {}
+      },
+      {
+        "id": "CUSTOM_SOFTWARE_SOLUTIONS",
+        "type": "Concept",
+        "properties": {}
+      },
+      {
+        "id": "WEB_APPLICATIONS",
+        "type": "Concept",
+        "properties": {}
+      },
+      {
+        "id": "MOBILE_APPLICATIONS",
+        "type": "Concept",
+        "properties": {}
+      },
+      {
+        "id": "CLOUD_SERVICES",
+        "type": "Concept",
+        "properties": {}
+      },
+      {
+        "id": "IT_CONSULTING",
+        "type": "Concept",
+        "properties": {}
+      },
+      {
+        "id": "ABOUT_PAGE_SOFTMANIA",
+        "type": "Document",
+        "properties": {
+          "source_url": "https://www.softmania.in/about"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "SOFTWARE_DEVELOPMENT",
+        "type": "SPECIALIZES_IN",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "DIGITAL_TRANSFORMATION",
+        "type": "FACILITATES",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "CUSTOM_SOFTWARE_SOLUTIONS",
+        "type": "PROVIDES",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "WEB_APPLICATIONS",
+        "type": "DEVELOPS",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "MOBILE_APPLICATIONS",
+        "type": "DEVELOPS",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "CLOUD_SERVICES",
+        "type": "OFFERS",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "IT_CONSULTING",
+        "type": "PROVIDES",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "ABOUT_PAGE_SOFTMANIA",
+        "type": "DESCRIBED_IN",
+        "properties": {}
+      }
+    ]
+  },
+  {
+    "doc_id": "softmania_master_dataset",
+    "chunk_id": "softmania_master_dataset_chunk_2",
+    "nodes": [
+      {
+        "id": "SOFT_MANIA",
+        "type": "Company",
+        "properties": {
+          "description": "A career transformation company focused on bridging the gap between academic knowledge and IT industry readiness.",
+          "founder": "Muruganantham Pothanaickar",
+          "mission": "Empower learners with clarity, confidence, and the skills needed to excel in their Splunk careers.",
+          "vision": "A future where graduates confidently step into successful IT careers, armed with practical skills and a strong professional identity.",
+          "learners_trained": 1500,
+          "years_of_experience": 7,
+          "practical_learning_percentage": 100
+        }
+      },
+      {
+        "id": "MURUGANANTHAM_POTHANAICKAR",
+        "type": "Person",
+        "properties": {
+          "role": "Splunk Trainer and Mentor",
+          "learners_trained": 1500
+        }
+      },
+      {
+        "id": "SPLUNK",
+        "type": "Concept",
+        "properties": {
+          "description": "A technology or field of expertise focused on data analysis and IT operations."
+        }
+      },
+      {
+        "id": "CAREER_TRANSFORMATION",
+        "type": "Concept",
+        "properties": {
+          "description": "The process of transitioning into a new career, specifically in the IT industry."
+        }
+      },
+      {
+        "id": "PRACTICAL_LEARNING",
+        "type": "Concept",
+        "properties": {
+          "description": "Learning methodology focused on real-time, project-based experiences."
+        }
+      },
+      {
+        "id": "TIER_3_CITIES",
+        "type": "Concept",
+        "properties": {
+          "description": "Smaller cities or towns, often with limited access to advanced educational or career opportunities."
+        }
+      },
+      {
+        "id": "SOFTWARE_INDUSTRY",
+        "type": "Concept",
+        "properties": {
+          "description": "The industry focused on the development, maintenance, and distribution of software."
+        }
+      },
+      {
+        "id": "VISION_TEMPLATE_SVG",
+        "type": "Document",
+        "properties": {
+          "description": "Illustration of developer at desk symbolizing the company's vision.",
+          "format": "SVG"
+        }
+      },
+      {
+        "id": "MISSION_TEMPLATE_SVG",
+        "type": "Document",
+        "properties": {
+          "description": "Illustration representing mission and collaborative learning.",
+          "format": "SVG"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "source_id": "MURUGANANTHAM_POTHANAICKAR",
+        "target_id": "SOFT_MANIA",
+        "type": "FOUNDED",
+        "properties": {}
+      },
+      {
+        "source_id": "MURUGANANTHAM_POTHANAICKAR",
+        "target_id": "SPLUNK",
+        "type": "SPECIALIZES_IN",
+        "properties": {}
+      },
+      {
+        "source_id": "MURUGANANTHAM_POTHANAICKAR",
+        "target_id": "SOFT_MANIA",
+        "type": "WORKS_FOR",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFT_MANIA",
+        "target_id": "CAREER_TRANSFORMATION",
+        "type": "FOCUSES_ON",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFT_MANIA",
+        "target_id": "PRACTICAL_LEARNING",
+        "type": "OFFERS",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFT_MANIA",
+        "target_id": "SPLUNK",
+        "type": "TRAINS_IN",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFT_MANIA",
+        "target_id": "TIER_3_CITIES",
+        "type": "TARGETS",
+        "properties": {
+          "goal": "Transform careers of 100,000 graduates"
+        }
+      },
+      {
+        "source_id": "SOFT_MANIA",
+        "target_id": "SOFTWARE_INDUSTRY",
+        "type": "PREPARES_FOR",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFT_MANIA",
+        "target_id": "VISION_TEMPLATE_SVG",
+        "type": "USES",
+        "properties": {
+          "purpose": "Illustration of vision"
+        }
+      },
+      {
+        "source_id": "SOFT_MANIA",
+        "target_id": "MISSION_TEMPLATE_SVG",
+        "type": "USES",
+        "properties": {
+          "purpose": "Illustration of mission"
+        }
+      }
+    ]
+  },
+  {
+    "doc_id": "softmania_master_dataset",
+    "chunk_id": "softmania_master_dataset_chunk_3",
+    "nodes": [
+      {
+        "id": "TRANSFORM_CAREER_TO_SOFTWARE_INDUSTRY",
+        "type": "Concept",
+        "properties": {
+          "description": "Transforming career to get into the Software Industry",
+          "target_audience": "1,00,000 graduates from Tier-3 cities"
+        }
+      },
+      {
+        "id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "type": "Company",
+        "properties": {
+          "name": "SoftMania Technologies Private Limited",
+          "year": 2023
+        }
+      },
+      {
+        "id": "SENTHILKUMAR_RANGASAMY",
+        "type": "Person",
+        "properties": {
+          "name": "Senthilkumar Rangasamy",
+          "role": "Director"
+        }
+      },
+      {
+        "id": "MAHESWARI_SENTHILKUMAR",
+        "type": "Person",
+        "properties": {
+          "name": "Maheswari Senthilkumar",
+          "role": "Co-Director"
+        }
+      },
+      {
+        "id": "MURUGANANTHAM_POTHANAICKAR",
+        "type": "Person",
+        "properties": {
+          "name": "Muruganantham Pothanaickar",
+          "role": "Founder & CEO"
+        }
+      },
+      {
+        "id": "ABOUT",
+        "type": "Document",
+        "properties": {
+          "title": "About",
+          "url": "/about"
+        }
+      },
+      {
+        "id": "CONTACT_US",
+        "type": "Document",
+        "properties": {
+          "title": "Contact Us",
+          "url": "/contact-us"
+        }
+      },
+      {
+        "id": "PRIVACY_POLICY",
+        "type": "Document",
+        "properties": {
+          "title": "Privacy Policy",
+          "url": "/privacy-policy"
+        }
+      },
+      {
+        "id": "TERMS_AND_CONDITIONS",
+        "type": "Document",
+        "properties": {
+          "title": "Terms & Conditions",
+          "url": "/terms"
+        }
+      },
+      {
+        "id": "REFUND_POLICY",
+        "type": "Document",
+        "properties": {
+          "title": "Refund Policy",
+          "url": "/refund-policy"
+        }
+      },
+      {
+        "id": "CANCELLATION_POLICY",
+        "type": "Document",
+        "properties": {
+          "title": "Cancellation Policy",
+          "url": "/cancellation-policy"
+        }
+      },
+      {
+        "id": "MISSION_TEMPLATE",
+        "type": "Document",
+        "properties": {
+          "title": "Mission Template Illustration",
+          "url": "/mission-template.svg"
+        }
+      },
+      {
+        "id": "SENTHILKUMAR_RANGASAMY_HEADSHOT",
+        "type": "Document",
+        "properties": {
+          "title": "Senthilkumar Rangasamy Headshot",
+          "url": "/Senthilkumar-Rangasamy.png"
+        }
+      },
+      {
+        "id": "MAHESWARI_SENTHILKUMAR_HEADSHOT",
+        "type": "Document",
+        "properties": {
+          "title": "Maheswari Senthilkumar Headshot",
+          "url": "/Maheswari-Senthilkumar.png"
+        }
+      },
+      {
+        "id": "MURUGANANTHAM_POTHANAICKAR_HEADSHOT",
+        "type": "Document",
+        "properties": {
+          "title": "Muruganantham Pothanaickar Headshot",
+          "url": "/Muruganantham-Pothanaickar.png"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "TRANSFORM_CAREER_TO_SOFTWARE_INDUSTRY",
+        "type": "FOCUSES_ON",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "SENTHILKUMAR_RANGASAMY",
+        "type": "HAS_DIRECTOR",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "MAHESWARI_SENTHILKUMAR",
+        "type": "HAS_CO_DIRECTOR",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "MURUGANANTHAM_POTHANAICKAR",
+        "type": "HAS_FOUNDER_AND_CEO",
+        "properties": {}
+      },
+      {
+        "source_id": "SENTHILKUMAR_RANGASAMY",
+        "target_id": "SENTHILKUMAR_RANGASAMY_HEADSHOT",
+        "type": "HAS_HEADSHOT",
+        "properties": {}
+      },
+      {
+        "source_id": "MAHESWARI_SENTHILKUMAR",
+        "target_id": "MAHESWARI_SENTHILKUMAR_HEADSHOT",
+        "type": "HAS_HEADSHOT",
+        "properties": {}
+      },
+      {
+        "source_id": "MURUGANANTHAM_POTHANAICKAR",
+        "target_id": "MURUGANANTHAM_POTHANAICKAR_HEADSHOT",
+        "type": "HAS_HEADSHOT",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "ABOUT",
+        "type": "HAS_DOCUMENT",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "CONTACT_US",
+        "type": "HAS_DOCUMENT",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "PRIVACY_POLICY",
+        "type": "HAS_DOCUMENT",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "TERMS_AND_CONDITIONS",
+        "type": "HAS_DOCUMENT",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "REFUND_POLICY",
+        "type": "HAS_DOCUMENT",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "CANCELLATION_POLICY",
+        "type": "HAS_DOCUMENT",
+        "properties": {}
+      },
+      {
+        "source_id": "TRANSFORM_CAREER_TO_SOFTWARE_INDUSTRY",
+        "target_id": "MISSION_TEMPLATE",
+        "type": "ILLUSTRATED_BY",
+        "properties": {}
+      }
+    ]
+  },
+  {
+    "doc_id": "softmania_master_dataset",
+    "chunk_id": "softmania_master_dataset_chunk_4",
+    "nodes": [
+      {
+        "id": "SPLUNK",
+        "type": "Company",
+        "properties": {
+          "source_url": "https://splunk.softmania.in/clientapp/app/products/explore-products/all-courses"
+        }
+      },
+      {
+        "id": "SOFTMANIA",
+        "type": "Company",
+        "properties": {
+          "source_url": "https://splunk.softmania.in/clientapp/app/products/explore-products/all-courses"
+        }
+      },
+      {
+        "id": "EXPLORE_PRODUCTS",
+        "type": "Document",
+        "properties": {
+          "source_url": "https://splunk.softmania.in/clientapp/app/products/explore-products/all-courses",
+          "title": "Explore Products"
+        }
+      },
+      {
+        "id": "ALL_COURSES",
+        "type": "Document",
+        "properties": {
+          "source_url": "https://splunk.softmania.in/clientapp/app/products/explore-products/all-courses",
+          "title": "All Courses"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "SPLUNK",
+        "type": "HOSTS",
+        "properties": {
+          "context": "Softmania hosts Splunk's client application"
+        }
+      },
+      {
+        "source_id": "SPLUNK",
+        "target_id": "EXPLORE_PRODUCTS",
+        "type": "OFFERS",
+        "properties": {
+          "context": "Splunk's client application provides access to 'Explore Products'"
+        }
+      },
+      {
+        "source_id": "EXPLORE_PRODUCTS",
+        "target_id": "ALL_COURSES",
+        "type": "CONTAINS",
+        "properties": {
+          "context": "'Explore Products' document includes 'All Courses'"
+        }
+      },
+      {
+        "source_id": "SPLUNK",
+        "target_id": "ALL_COURSES",
+        "type": "PROVIDES",
+        "properties": {
+          "context": "Splunk provides access to 'All Courses' through its client application"
+        }
+      }
+    ]
+  },
+  {
+    "doc_id": "softmania_master_dataset",
+    "chunk_id": "softmania_master_dataset_chunk_5",
+    "nodes": [
+      {
+        "id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "type": "Company",
+        "properties": {
+          "name": "SoftMania Technologies Private Limited",
+          "website": "https://splunk.softmania.in"
+        }
+      },
+      {
+        "id": "MURUGANANTHAM_POTHANAICKAR",
+        "type": "Person",
+        "properties": {
+          "name": "Muruganantham Pothanaickar"
+        }
+      },
+      {
+        "id": "RAMANY_MUTHUSAMY",
+        "type": "Person",
+        "properties": {
+          "name": "Ramany Muthusamy"
+        }
+      },
+      {
+        "id": "SCENARIO_BASED_SPLUNK_ADMIN_USE_CASES_PART_1",
+        "type": "Document",
+        "properties": {
+          "name": "Scenario based Splunk Admin Use Cases - Part 1",
+          "average_rating": 4.7,
+          "ratings_count": 26,
+          "author": "Muruganantham Pothanaickar",
+          "price": "Free",
+          "type": "Course"
+        }
+      },
+      {
+        "id": "SOFTMANIA_PREMIUM_ALL_LIVE_COURSES_AND_CONTENTS",
+        "type": "Document",
+        "properties": {
+          "name": "SoftMania Premium - All Live Courses & Contents",
+          "author": "Muruganantham Pothanaickar",
+          "price": "Rs. 4999",
+          "type": "Bundle"
+        }
+      },
+      {
+        "id": "SPLUNK_DATA_ONBOARDING_USECASES",
+        "type": "Document",
+        "properties": {
+          "name": "Splunk Data Onboarding Usecases",
+          "average_rating": 5.0,
+          "ratings_count": 1,
+          "author": "Ramany Muthusamy",
+          "price": "Free",
+          "type": "Course"
+        }
+      },
+      {
+        "id": "SPLUNK_TIMESTAMP_EXTRACTION_MASTERCLASS_101",
+        "type": "Document",
+        "properties": {
+          "name": "Splunk Timestamp Extraction Masterclass 101",
+          "average_rating": 4.6,
+          "ratings_count": 13,
+          "author": "Ramany Muthusamy",
+          "price": "Free",
+          "type": "Course"
+        }
+      },
+      {
+        "id": "SPLUNK_SYSTEM_ADMIN",
+        "type": "Document",
+        "properties": {
+          "name": "Splunk System Admin",
+          "duration": "30 days",
+          "average_rating": 4.5,
+          "ratings_count": 2,
+          "author": "Muruganantham Pothanaickar",
+          "price": "Free",
+          "type": "Course"
+        }
+      },
+      {
+        "id": "SPLUNK_SEARCH_COMMANDS_MASTERCLASS_101",
+        "type": "Document",
+        "properties": {
+          "name": "Splunk Search Commands Masterclass 101",
+          "average_rating": 4.9,
+          "ratings_count": 10,
+          "author": "Ramany Muthusamy",
+          "price": "Free",
+          "type": "Course"
+        }
+      },
+      {
+        "id": "SPLUNK_INFRASTRUCTURE_AUTOMATION",
+        "type": "Document",
+        "properties": {
+          "name": "Splunk Infrastructure Automation",
+          "average_rating": 5.0,
+          "ratings_count": 1,
+          "author": "Ramany Muthusamy",
+          "price": "Free",
+          "type": "Course"
+        }
+      },
+      {
+        "id": "DATA_AND_ANALYTICS",
+        "type": "Concept",
+        "properties": {
+          "name": "Data & Analytics"
+        }
+      },
+      {
+        "id": "EDUCATION",
+        "type": "Concept",
+        "properties": {
+          "name": "Education"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "SCENARIO_BASED_SPLUNK_ADMIN_USE_CASES_PART_1",
+        "type": "OFFERS",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "SOFTMANIA_PREMIUM_ALL_LIVE_COURSES_AND_CONTENTS",
+        "type": "OFFERS",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "SPLUNK_DATA_ONBOARDING_USECASES",
+        "type": "OFFERS",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "SPLUNK_TIMESTAMP_EXTRACTION_MASTERCLASS_101",
+        "type": "OFFERS",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "SPLUNK_SYSTEM_ADMIN",
+        "type": "OFFERS",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "SPLUNK_SEARCH_COMMANDS_MASTERCLASS_101",
+        "type": "OFFERS",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "SPLUNK_INFRASTRUCTURE_AUTOMATION",
+        "type": "OFFERS",
+        "properties": {}
+      },
+      {
+        "source_id": "MURUGANANTHAM_POTHANAICKAR",
+        "target_id": "SCENARIO_BASED_SPLUNK_ADMIN_USE_CASES_PART_1",
+        "type": "AUTHORED",
+        "properties": {}
+      },
+      {
+        "source_id": "MURUGANANTHAM_POTHANAICKAR",
+        "target_id": "SOFTMANIA_PREMIUM_ALL_LIVE_COURSES_AND_CONTENTS",
+        "type": "AUTHORED",
+        "properties": {}
+      },
+      {
+        "source_id": "MURUGANANTHAM_POTHANAICKAR",
+        "target_id": "SPLUNK_SYSTEM_ADMIN",
+        "type": "AUTHORED",
+        "properties": {}
+      },
+      {
+        "source_id": "RAMANY_MUTHUSAMY",
+        "target_id": "SPLUNK_DATA_ONBOARDING_USECASES",
+        "type": "AUTHORED",
+        "properties": {}
+      },
+      {
+        "source_id": "RAMANY_MUTHUSAMY",
+        "target_id": "SPLUNK_TIMESTAMP_EXTRACTION_MASTERCLASS_101",
+        "type": "AUTHORED",
+        "properties": {}
+      },
+      {
+        "source_id": "RAMANY_MUTHUSAMY",
+        "target_id": "SPLUNK_SEARCH_COMMANDS_MASTERCLASS_101",
+        "type": "AUTHORED",
+        "properties": {}
+      },
+      {
+        "source_id": "RAMANY_MUTHUSAMY",
+        "target_id": "SPLUNK_INFRASTRUCTURE_AUTOMATION",
+        "type": "AUTHORED",
+        "properties": {}
+      },
+      {
+        "source_id": "SCENARIO_BASED_SPLUNK_ADMIN_USE_CASES_PART_1",
+        "target_id": "DATA_AND_ANALYTICS",
+        "type": "RELATED_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_DATA_ONBOARDING_USECASES",
+        "target_id": "DATA_AND_ANALYTICS",
+        "type": "RELATED_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_TIMESTAMP_EXTRACTION_MASTERCLASS_101",
+        "target_id": "DATA_AND_ANALYTICS",
+        "type": "RELATED_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_SYSTEM_ADMIN",
+        "target_id": "DATA_AND_ANALYTICS",
+        "type": "RELATED_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_SEARCH_COMMANDS_MASTERCLASS_101",
+        "target_id": "DATA_AND_ANALYTICS",
+        "type": "RELATED_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_INFRASTRUCTURE_AUTOMATION",
+        "target_id": "DATA_AND_ANALYTICS",
+        "type": "RELATED_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SCENARIO_BASED_SPLUNK_ADMIN_USE_CASES_PART_1",
+        "target_id": "EDUCATION",
+        "type": "RELATED_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_PREMIUM_ALL_LIVE_COURSES_AND_CONTENTS",
+        "target_id": "EDUCATION",
+        "type": "RELATED_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_DATA_ONBOARDING_USECASES",
+        "target_id": "EDUCATION",
+        "type": "RELATED_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_TIMESTAMP_EXTRACTION_MASTERCLASS_101",
+        "target_id": "EDUCATION",
+        "type": "RELATED_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_SYSTEM_ADMIN",
+        "target_id": "EDUCATION",
+        "type": "RELATED_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_SEARCH_COMMANDS_MASTERCLASS_101",
+        "target_id": "EDUCATION",
+        "type": "RELATED_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_INFRASTRUCTURE_AUTOMATION",
+        "target_id": "EDUCATION",
+        "type": "RELATED_TO",
+        "properties": {}
+      }
+    ]
+  },
+  {
+    "doc_id": "softmania_master_dataset",
+    "chunk_id": "softmania_master_dataset_chunk_6",
+    "nodes": [
+      {
+        "id": "MURUGANANTHAM_POTHANAICKAR",
+        "type": "Person",
+        "properties": {
+          "name": "Muruganantham Pothanaickar"
+        }
+      },
+      {
+        "id": "RAMANY_MUTHUSAMY",
+        "type": "Person",
+        "properties": {
+          "name": "Ramany Muthusamy"
+        }
+      },
+      {
+        "id": "SPLUNK_SEARCH_COMMANDS_MASTERCLASS_101",
+        "type": "Document",
+        "properties": {
+          "title": "Splunk Search Commands Masterclass 101",
+          "rating": 4.9,
+          "ratings_count": 10,
+          "price": "Free"
+        }
+      },
+      {
+        "id": "SPLUNK_INFRASTRUCTURE_AUTOMATION",
+        "type": "Document",
+        "properties": {
+          "title": "Splunk Infrastructure Automation",
+          "rating": 5.0,
+          "ratings_count": 1,
+          "price": "Free"
+        }
+      },
+      {
+        "id": "SPLUNK_DEVELOPMENT_KNOWLEDGE_OBJECTS",
+        "type": "Document",
+        "properties": {
+          "title": "Splunk Development - Knowledge Objects",
+          "duration": "60 days",
+          "price": "Rs. 2999"
+        }
+      },
+      {
+        "id": "SPLUNK_CLUSTER_ADMIN",
+        "type": "Document",
+        "properties": {
+          "title": "Splunk Cluster Admin",
+          "duration": "60 days",
+          "price": "Rs. 2999"
+        }
+      },
+      {
+        "id": "SPLUNK_DATA_ADMIN_ADVANCED",
+        "type": "Document",
+        "properties": {
+          "title": "Splunk Data Admin - Advanced",
+          "duration": "100 hours",
+          "price": "Rs. 2999"
+        }
+      },
+      {
+        "id": "SPLUNK_OBSERVABILITY",
+        "type": "Document",
+        "properties": {
+          "title": "Splunk Observability",
+          "price": "Rs. 24999"
+        }
+      },
+      {
+        "id": "SPLUNK_SOAR",
+        "type": "Document",
+        "properties": {
+          "title": "Splunk SOAR",
+          "price": "Rs. 14999"
+        }
+      },
+      {
+        "id": "SPLUNK",
+        "type": "Company",
+        "properties": {
+          "name": "Splunk"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "source_id": "MURUGANANTHAM_POTHANAICKAR",
+        "target_id": "SPLUNK_SEARCH_COMMANDS_MASTERCLASS_101",
+        "type": "AUTHOR_OF",
+        "properties": {}
+      },
+      {
+        "source_id": "MURUGANANTHAM_POTHANAICKAR",
+        "target_id": "SPLUNK_INFRASTRUCTURE_AUTOMATION",
+        "type": "AUTHOR_OF",
+        "properties": {}
+      },
+      {
+        "source_id": "MURUGANANTHAM_POTHANAICKAR",
+        "target_id": "SPLUNK_DEVELOPMENT_KNOWLEDGE_OBJECTS",
+        "type": "AUTHOR_OF",
+        "properties": {}
+      },
+      {
+        "source_id": "MURUGANANTHAM_POTHANAICKAR",
+        "target_id": "SPLUNK_CLUSTER_ADMIN",
+        "type": "AUTHOR_OF",
+        "properties": {}
+      },
+      {
+        "source_id": "MURUGANANTHAM_POTHANAICKAR",
+        "target_id": "SPLUNK_OBSERVABILITY",
+        "type": "AUTHOR_OF",
+        "properties": {}
+      },
+      {
+        "source_id": "MURUGANANTHAM_POTHANAICKAR",
+        "target_id": "SPLUNK_SOAR",
+        "type": "AUTHOR_OF",
+        "properties": {}
+      },
+      {
+        "source_id": "RAMANY_MUTHUSAMY",
+        "target_id": "SPLUNK_SEARCH_COMMANDS_MASTERCLASS_101",
+        "type": "AUTHOR_OF",
+        "properties": {}
+      },
+      {
+        "source_id": "RAMANY_MUTHUSAMY",
+        "target_id": "SPLUNK_INFRASTRUCTURE_AUTOMATION",
+        "type": "AUTHOR_OF",
+        "properties": {}
+      },
+      {
+        "source_id": "RAMANY_MUTHUSAMY",
+        "target_id": "SPLUNK_DATA_ADMIN_ADVANCED",
+        "type": "AUTHOR_OF",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_SEARCH_COMMANDS_MASTERCLASS_101",
+        "target_id": "SPLUNK",
+        "type": "RELATED_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_INFRASTRUCTURE_AUTOMATION",
+        "target_id": "SPLUNK",
+        "type": "RELATED_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_DEVELOPMENT_KNOWLEDGE_OBJECTS",
+        "target_id": "SPLUNK",
+        "type": "RELATED_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_CLUSTER_ADMIN",
+        "target_id": "SPLUNK",
+        "type": "RELATED_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_DATA_ADMIN_ADVANCED",
+        "target_id": "SPLUNK",
+        "type": "RELATED_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_OBSERVABILITY",
+        "target_id": "SPLUNK",
+        "type": "RELATED_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_SOAR",
+        "target_id": "SPLUNK",
+        "type": "RELATED_TO",
+        "properties": {}
+      }
+    ]
+  },
+  {
+    "doc_id": "softmania_master_dataset",
+    "chunk_id": "softmania_master_dataset_chunk_7",
+    "nodes": [
+      {
+        "id": "SOFTMANIA",
+        "type": "Company",
+        "properties": {
+          "source_url": "https://bookings.softmania.in/#/services"
+        }
+      },
+      {
+        "id": "ONLINE_BOOKING_PLATFORM",
+        "type": "Concept",
+        "properties": {}
+      },
+      {
+        "id": "SERVICES_PAGE",
+        "type": "Document",
+        "properties": {
+          "url": "https://bookings.softmania.in/#/services"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "ONLINE_BOOKING_PLATFORM",
+        "type": "PROVIDES",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "SERVICES_PAGE",
+        "type": "HOSTS",
+        "properties": {}
+      }
+    ]
+  },
+  {
+    "doc_id": "softmania_master_dataset",
+    "chunk_id": "softmania_master_dataset_chunk_8",
+    "nodes": [
+      {
+        "id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "type": "Company",
+        "properties": {
+          "name": "SoftMania Technologies Private Limited"
+        }
+      },
+      {
+        "id": "MURUGANANTHAM_POTHNAICKAR",
+        "type": "Person",
+        "properties": {
+          "role": "Representative"
+        }
+      },
+      {
+        "id": "SPLUNK_LAB_ENQUIRY",
+        "type": "Event",
+        "properties": {
+          "duration": "10 mins",
+          "price": "Not specified",
+          "description": "Enquiry session for Splunk Lab"
+        }
+      },
+      {
+        "id": "SPLUNK_ENTERPRISE_TRAINING_ENQUIRY",
+        "type": "Event",
+        "properties": {
+          "duration": "30 mins",
+          "price": "2000 INR",
+          "description": "Enquiry session for Splunk Enterprise Training"
+        }
+      },
+      {
+        "id": "ONE_HOUR_MEETING",
+        "type": "Event",
+        "properties": {
+          "duration": "1 hour",
+          "price": "3500 INR",
+          "description": "General meeting session"
+        }
+      },
+      {
+        "id": "TRAINING_METHODS",
+        "type": "Concept",
+        "properties": {
+          "description": "Approaches for training (online, live sessions, or recorded)"
+        }
+      },
+      {
+        "id": "CURRICULUM",
+        "type": "Concept",
+        "properties": {
+          "description": "Detailed coverage of training content for beginners to advanced learners"
+        }
+      },
+      {
+        "id": "MODE_OF_TRAINING",
+        "type": "Concept",
+        "properties": {
+          "description": "Exploration of training modes and personalized support options"
+        }
+      },
+      {
+        "id": "BOOKING_PROCESS_DOCUMENT",
+        "type": "Document",
+        "properties": {
+          "description": "Instructions for booking an appointment"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "MURUGANANTHAM_POTHNAICKAR",
+        "type": "EMPLOYS",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "SPLUNK_LAB_ENQUIRY",
+        "type": "OFFERS",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "SPLUNK_ENTERPRISE_TRAINING_ENQUIRY",
+        "type": "OFFERS",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "ONE_HOUR_MEETING",
+        "type": "OFFERS",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_ENTERPRISE_TRAINING_ENQUIRY",
+        "target_id": "TRAINING_METHODS",
+        "type": "DISCUSSES",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_ENTERPRISE_TRAINING_ENQUIRY",
+        "target_id": "CURRICULUM",
+        "type": "REVIEWS",
+        "properties": {}
+      },
+      {
+        "source_id": "SPLUNK_ENTERPRISE_TRAINING_ENQUIRY",
+        "target_id": "MODE_OF_TRAINING",
+        "type": "EXPLORES",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "BOOKING_PROCESS_DOCUMENT",
+        "type": "PROVIDES",
+        "properties": {}
+      }
+    ]
+  },
+  {
+    "doc_id": "softmania_master_dataset",
+    "chunk_id": "softmania_master_dataset_chunk_9",
+    "nodes": [
+      {
+        "id": "CURRICULUM",
+        "type": "Document",
+        "properties": {
+          "description": "Educational content covering beginners to advanced learners"
+        }
+      },
+      {
+        "id": "MODE_OF_TRAINING",
+        "type": "Concept",
+        "properties": {
+          "description": "Method or format of delivering training"
+        }
+      },
+      {
+        "id": "PERSONALIZED_SUPPORT",
+        "type": "Concept",
+        "properties": {
+          "description": "Customized assistance provided to learners"
+        }
+      },
+      {
+        "id": "FEES",
+        "type": "Concept",
+        "properties": {
+          "description": "Cost associated with the training program"
+        }
+      },
+      {
+        "id": "SCHEDULES",
+        "type": "Concept",
+        "properties": {
+          "description": "Timings and durations of training sessions"
+        }
+      },
+      {
+        "id": "OUTCOMES",
+        "type": "Concept",
+        "properties": {
+          "description": "Results or skills gained from the training"
+        }
+      },
+      {
+        "id": "REAL_TIME_PROJECTS",
+        "type": "Event",
+        "properties": {
+          "description": "Practical projects conducted in real-time as part of the training"
+        }
+      },
+      {
+        "id": "MENTORSHIP",
+        "type": "Concept",
+        "properties": {
+          "description": "Guidance and support provided by mentors"
+        }
+      },
+      {
+        "id": "COMMUNITY_SUPPORT",
+        "type": "Concept",
+        "properties": {
+          "description": "Assistance and engagement within a learner community"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "source_id": "CURRICULUM",
+        "target_id": "MODE_OF_TRAINING",
+        "type": "RELATED_TO",
+        "properties": {
+          "context": "Curriculum may influence the mode of training"
+        }
+      },
+      {
+        "source_id": "CURRICULUM",
+        "target_id": "PERSONALIZED_SUPPORT",
+        "type": "SUPPORTS",
+        "properties": {
+          "context": "Curriculum may include or require personalized support"
+        }
+      },
+      {
+        "source_id": "CURRICULUM",
+        "target_id": "OUTCOMES",
+        "type": "DEFINES",
+        "properties": {
+          "context": "Curriculum outlines the outcomes of the training"
+        }
+      },
+      {
+        "source_id": "MODE_OF_TRAINING",
+        "target_id": "PERSONALIZED_SUPPORT",
+        "type": "INCLUDES",
+        "properties": {
+          "context": "Mode of training may offer personalized support"
+        }
+      },
+      {
+        "source_id": "REAL_TIME_PROJECTS",
+        "target_id": "CURRICULUM",
+        "type": "PART_OF",
+        "properties": {
+          "context": "Real-time projects are included in the curriculum"
+        }
+      },
+      {
+        "source_id": "MENTORSHIP",
+        "target_id": "PERSONALIZED_SUPPORT",
+        "type": "ENHANCES",
+        "properties": {
+          "context": "Mentorship enhances personalized support"
+        }
+      },
+      {
+        "source_id": "COMMUNITY_SUPPORT",
+        "target_id": "PERSONALIZED_SUPPORT",
+        "type": "COMPLEMENTS",
+        "properties": {
+          "context": "Community support complements personalized support"
+        }
+      },
+      {
+        "source_id": "FEES",
+        "target_id": "CURRICULUM",
+        "type": "ASSOCIATED_WITH",
+        "properties": {
+          "context": "Fees are associated with the curriculum and training program"
+        }
+      },
+      {
+        "source_id": "SCHEDULES",
+        "target_id": "MODE_OF_TRAINING",
+        "type": "DEFINES",
+        "properties": {
+          "context": "Schedules define the timing of the mode of training"
+        }
+      }
+    ]
+  },
+  {
+    "doc_id": "softmania_master_dataset",
+    "chunk_id": "softmania_master_dataset_chunk_10",
+    "nodes": [
+      {
+        "id": "CANCELLATION_POLICY",
+        "type": "Document",
+        "properties": {
+          "source_url": "https://www.softmania.in/cancellation-policy",
+          "title": "Cancellation Policy"
+        }
+      },
+      {
+        "id": "SOFTMANIA",
+        "type": "Company",
+        "properties": {
+          "name": "Softmania",
+          "website": "https://www.softmania.in"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "source_id": "CANCELLATION_POLICY",
+        "target_id": "SOFTMANIA",
+        "type": "PUBLISHED_BY",
+        "properties": {}
+      }
+    ]
+  },
+  {
+    "doc_id": "softmania_master_dataset",
+    "chunk_id": "softmania_master_dataset_chunk_11",
+    "nodes": [
+      {
+        "id": "SOFTMANIA",
+        "type": "Company",
+        "properties": {
+          "name": "SoftMania",
+          "description": "A company delivering high-quality online courses and training programs"
+        }
+      },
+      {
+        "id": "CANCELLATION_AND_REFUND_POLICY",
+        "type": "Document",
+        "properties": {
+          "title": "Cancellation & Refund Policy",
+          "url": "/refund-policy"
+        }
+      },
+      {
+        "id": "TERMS_AND_CONDITIONS",
+        "type": "Document",
+        "properties": {
+          "title": "Terms & Conditions",
+          "url": "/terms"
+        }
+      },
+      {
+        "id": "REFUND_POLICY",
+        "type": "Document",
+        "properties": {
+          "title": "Refund Policy",
+          "url": "/refund-policy"
+        }
+      },
+      {
+        "id": "CANCELLATION_POLICY",
+        "type": "Document",
+        "properties": {
+          "title": "Cancellation Policy",
+          "url": "/cancellation-policy"
+        }
+      },
+      {
+        "id": "CONTACT_US",
+        "type": "Document",
+        "properties": {
+          "title": "Contact Us",
+          "url": "/contact-us"
+        }
+      },
+      {
+        "id": "PRIVACY_POLICY",
+        "type": "Document",
+        "properties": {
+          "title": "Privacy Policy",
+          "url": "/privacy-policy"
+        }
+      },
+      {
+        "id": "ONLINE_COURSES",
+        "type": "Concept",
+        "properties": {
+          "name": "Online Courses",
+          "description": "High-quality courses and training programs offered by SoftMania"
+        }
+      },
+      {
+        "id": "TRAINING_PROGRAMS",
+        "type": "Concept",
+        "properties": {
+          "name": "Training Programs",
+          "description": "Programs designed to transform careers through practical learning"
+        }
+      },
+      {
+        "id": "NO_CANCELLATIONS",
+        "type": "Concept",
+        "properties": {
+          "name": "No Cancellations",
+          "description": "Policy stating cancellations are not permitted under any circumstances"
+        }
+      },
+      {
+        "id": "NO_REFUNDS",
+        "type": "Concept",
+        "properties": {
+          "name": "No Refunds",
+          "description": "Policy stating all payments are final and non-refundable"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "CANCELLATION_AND_REFUND_POLICY",
+        "type": "HAS_POLICY",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "TERMS_AND_CONDITIONS",
+        "type": "HAS_POLICY",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "REFUND_POLICY",
+        "type": "HAS_POLICY",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "CANCELLATION_POLICY",
+        "type": "HAS_POLICY",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "CONTACT_US",
+        "type": "HAS_PAGE",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "PRIVACY_POLICY",
+        "type": "HAS_POLICY",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "ONLINE_COURSES",
+        "type": "OFFERS",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "TRAINING_PROGRAMS",
+        "type": "OFFERS",
+        "properties": {}
+      },
+      {
+        "source_id": "CANCELLATION_AND_REFUND_POLICY",
+        "target_id": "NO_CANCELLATIONS",
+        "type": "DESCRIBES",
+        "properties": {}
+      },
+      {
+        "source_id": "CANCELLATION_AND_REFUND_POLICY",
+        "target_id": "NO_REFUNDS",
+        "type": "DESCRIBES",
+        "properties": {}
+      },
+      {
+        "source_id": "NO_CANCELLATIONS",
+        "target_id": "ONLINE_COURSES",
+        "type": "APPLIES_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "NO_CANCELLATIONS",
+        "target_id": "TRAINING_PROGRAMS",
+        "type": "APPLIES_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "NO_REFUNDS",
+        "target_id": "ONLINE_COURSES",
+        "type": "APPLIES_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "NO_REFUNDS",
+        "target_id": "TRAINING_PROGRAMS",
+        "type": "APPLIES_TO",
+        "properties": {}
+      }
+    ]
+  },
+  {
+    "doc_id": "softmania_master_dataset",
+    "chunk_id": "softmania_master_dataset_chunk_12",
+    "nodes": [
+      {
+        "id": "SOFTMANIA",
+        "type": "Company",
+        "properties": {
+          "name": "SoftMania"
+        }
+      },
+      {
+        "id": "CANCELLATION_AND_REFUND_POLICY",
+        "type": "Document",
+        "properties": {
+          "title": "Cancellation & Refund Policy",
+          "source": "Extracted from provided text"
+        }
+      },
+      {
+        "id": "COURSE",
+        "type": "Concept",
+        "properties": {
+          "name": "Course"
+        }
+      },
+      {
+        "id": "TRAINING_PROGRAM",
+        "type": "Concept",
+        "properties": {
+          "name": "Training Program"
+        }
+      },
+      {
+        "id": "TRAINING_SESSION",
+        "type": "Concept",
+        "properties": {
+          "name": "Training Session"
+        }
+      },
+      {
+        "id": "ENROLLMENT",
+        "type": "Concept",
+        "properties": {
+          "name": "Enrollment"
+        }
+      },
+      {
+        "id": "REFUND",
+        "type": "Concept",
+        "properties": {
+          "name": "Refund"
+        }
+      },
+      {
+        "id": "CREDIT",
+        "type": "Concept",
+        "properties": {
+          "name": "Credit"
+        }
+      },
+      {
+        "id": "NON_ATTENDANCE",
+        "type": "Concept",
+        "properties": {
+          "name": "Non-Attendance"
+        }
+      },
+      {
+        "id": "WITHDRAWAL",
+        "type": "Concept",
+        "properties": {
+          "name": "Withdrawal"
+        }
+      },
+      {
+        "id": "TRANSFERABILITY",
+        "type": "Concept",
+        "properties": {
+          "name": "Transferability"
+        }
+      },
+      {
+        "id": "EXCEPTIONS",
+        "type": "Concept",
+        "properties": {
+          "name": "Exceptions"
+        }
+      },
+      {
+        "id": "UNFORESEEN_CIRCUMSTANCES",
+        "type": "Concept",
+        "properties": {
+          "name": "Unforeseen Circumstances"
+        }
+      },
+      {
+        "id": "TRAINER_UNAVAILABILITY",
+        "type": "Concept",
+        "properties": {
+          "name": "Trainer Unavailability"
+        }
+      },
+      {
+        "id": "TECHNICAL_ISSUES",
+        "type": "Concept",
+        "properties": {
+          "name": "Technical Issues"
+        }
+      },
+      {
+        "id": "RESCHEDULING",
+        "type": "Concept",
+        "properties": {
+          "name": "Rescheduling"
+        }
+      },
+      {
+        "id": "COURSE_CREDIT",
+        "type": "Concept",
+        "properties": {
+          "name": "Course Credit"
+        }
+      },
+      {
+        "id": "MONETARY_REFUND",
+        "type": "Concept",
+        "properties": {
+          "name": "Monetary Refund"
+        }
+      },
+      {
+        "id": "PURCHASE_ACKNOWLEDGMENT",
+        "type": "Event",
+        "properties": {
+          "name": "Purchase Acknowledgment"
+        }
+      },
+      {
+        "id": "SUPPORT_CONTACT",
+        "type": "Document",
+        "properties": {
+          "email": "support@grad2it.in",
+          "name": "Support Contact"
+        }
+      },
+      {
+        "id": "ABOUT_PAGE",
+        "type": "Document",
+        "properties": {
+          "title": "About",
+          "url": "/about"
+        }
+      },
+      {
+        "id": "CONTACT_US_PAGE",
+        "type": "Document",
+        "properties": {
+          "title": "Contact Us",
+          "url": "/contact-us"
+        }
+      },
+      {
+        "id": "PRIVACY_POLICY_PAGE",
+        "type": "Document",
+        "properties": {
+          "title": "Privacy Policy",
+          "url": "/privacy-policy"
+        }
+      },
+      {
+        "id": "TERMS_AND_CONDITIONS_PAGE",
+        "type": "Document",
+        "properties": {
+          "title": "Terms & Conditions",
+          "url": "/terms"
+        }
+      },
+      {
+        "id": "REFUND_POLICY_PAGE",
+        "type": "Document",
+        "properties": {
+          "title": "Refund Policy",
+          "url": "/refund-policy"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "CANCELLATION_AND_REFUND_POLICY",
+        "type": "PUBLISHES",
+        "properties": {}
+      },
+      {
+        "source_id": "CANCELLATION_AND_REFUND_POLICY",
+        "target_id": "REFUND",
+        "type": "STATEMENT_ON",
+        "properties": {
+          "statement": "No refunds or credits for partial use, non-attendance, or withdrawal"
+        }
+      },
+      {
+        "source_id": "CANCELLATION_AND_REFUND_POLICY",
+        "target_id": "CREDIT",
+        "type": "STATEMENT_ON",
+        "properties": {
+          "statement": "No refunds or credits for partial use, non-attendance, or withdrawal"
+        }
+      },
+      {
+        "source_id": "CANCELLATION_AND_REFUND_POLICY",
+        "target_id": "NON_ATTENDANCE",
+        "type": "STATEMENT_ON",
+        "properties": {
+          "statement": "No refunds or credits for non-attendance"
+        }
+      },
+      {
+        "source_id": "CANCELLATION_AND_REFUND_POLICY",
+        "target_id": "WITHDRAWAL",
+        "type": "STATEMENT_ON",
+        "properties": {
+          "statement": "No refunds or credits for withdrawal"
+        }
+      },
+      {
+        "source_id": "CANCELLATION_AND_REFUND_POLICY",
+        "target_id": "TRANSFERABILITY",
+        "type": "STATEMENT_ON",
+        "properties": {
+          "statement": "Enrollments are non-transferable"
+        }
+      },
+      {
+        "source_id": "CANCELLATION_AND_REFUND_POLICY",
+        "target_id": "COURSE",
+        "type": "COVERS",
+        "properties": {}
+      },
+      {
+        "source_id": "CANCELLATION_AND_REFUND_POLICY",
+        "target_id": "TRAINING_PROGRAM",
+        "type": "COVERS",
+        "properties": {}
+      },
+      {
+        "source_id": "CANCELLATION_AND_REFUND_POLICY",
+        "target_id": "TRAINING_SESSION",
+        "type": "COVERS",
+        "properties": {}
+      },
+      {
+        "source_id": "CANCELLATION_AND_REFUND_POLICY",
+        "target_id": "ENROLLMENT",
+        "type": "COVERS",
+        "properties": {}
+      },
+      {
+        "source_id": "CANCELLATION_AND_REFUND_POLICY",
+        "target_id": "EXCEPTIONS",
+        "type": "DESCRIBES",
+        "properties": {}
+      },
+      {
+        "source_id": "EXCEPTIONS",
+        "target_id": "UNFORESEEN_CIRCUMSTANCES",
+        "type": "CAUSED_BY",
+        "properties": {}
+      },
+      {
+        "source_id": "UNFORESEEN_CIRCUMSTANCES",
+        "target_id": "TRAINER_UNAVAILABILITY",
+        "type": "INCLUDES",
+        "properties": {}
+      },
+      {
+        "source_id": "UNFORESEEN_CIRCUMSTANCES",
+        "target_id": "TECHNICAL_ISSUES",
+        "type": "INCLUDES",
+        "properties": {}
+      },
+      {
+        "source_id": "EXCEPTIONS",
+        "target_id": "RESCHEDULING",
+        "type": "RESULTS_IN",
+        "properties": {}
+      },
+      {
+        "source_id": "EXCEPTIONS",
+        "target_id": "COURSE_CREDIT",
+        "type": "RESULTS_IN",
+        "properties": {}
+      },
+      {
+        "source_id": "EXCEPTIONS",
+        "target_id": "MONETARY_REFUND",
+        "type": "EXCLUDES",
+        "properties": {
+          "statement": "Monetary refunds will not be issued"
+        }
+      },
+      {
+        "source_id": "PURCHASE_ACKNOWLEDGMENT",
+        "target_id": "CANCELLATION_AND_REFUND_POLICY",
+        "type": "ACKNOWLEDGES",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "SUPPORT_CONTACT",
+        "type": "PROVIDES",
+        "properties": {}
+      },
+      {
+        "source_id": "CANCELLATION_AND_REFUND_POLICY",
+        "target_id": "SUPPORT_CONTACT",
+        "type": "REFERS_TO",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "ABOUT_PAGE",
+        "type": "HOSTS",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "CONTACT_US_PAGE",
+        "type": "HOSTS",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "PRIVACY_POLICY_PAGE",
+        "type": "HOSTS",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "TERMS_AND_CONDITIONS_PAGE",
+        "type": "HOSTS",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "REFUND_POLICY_PAGE",
+        "type": "HOSTS",
+        "properties": {}
+      }
+    ]
+  },
+  {
+    "doc_id": "softmania_master_dataset",
+    "chunk_id": "softmania_master_dataset_chunk_13",
+    "nodes": [
+      {
+        "id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "type": "Company",
+        "properties": {
+          "name": "SoftMania Technologies Private Limited",
+          "copyright_year": 2023
+        }
+      },
+      {
+        "id": "PRIVACY_POLICY",
+        "type": "Document",
+        "properties": {
+          "title": "Privacy Policy"
+        }
+      },
+      {
+        "id": "TERMS_AND_CONDITIONS",
+        "type": "Document",
+        "properties": {
+          "title": "Terms & Conditions"
+        }
+      },
+      {
+        "id": "REFUND_POLICY",
+        "type": "Document",
+        "properties": {
+          "title": "Refund Policy"
+        }
+      },
+      {
+        "id": "CANCELLATION_POLICY",
+        "type": "Document",
+        "properties": {
+          "title": "Cancellation Policy"
+        }
+      },
+      {
+        "id": "ABOUT",
+        "type": "Document",
+        "properties": {
+          "title": "About"
+        }
+      },
+      {
+        "id": "CONTACT_US",
+        "type": "Document",
+        "properties": {
+          "title": "Contact Us"
+        }
+      },
+      {
+        "id": "LABS",
+        "type": "Concept",
+        "properties": {
+          "name": "Labs"
+        }
+      },
+      {
+        "id": "V2_0_0",
+        "type": "Concept",
+        "properties": {
+          "name": "V2.0.0",
+          "type": "Version"
+        }
+      },
+      {
+        "id": "TEST_MODE",
+        "type": "Concept",
+        "properties": {
+          "name": "Test Mode"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "PRIVACY_POLICY",
+        "type": "HAS_DOCUMENT",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "TERMS_AND_CONDITIONS",
+        "type": "HAS_DOCUMENT",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "REFUND_POLICY",
+        "type": "HAS_DOCUMENT",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "CANCELLATION_POLICY",
+        "type": "HAS_DOCUMENT",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "ABOUT",
+        "type": "HAS_DOCUMENT",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "CONTACT_US",
+        "type": "HAS_DOCUMENT",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "LABS",
+        "type": "HAS_CONCEPT",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "V2_0_0",
+        "type": "HAS_VERSION",
+        "properties": {}
+      },
+      {
+        "source_id": "SOFTMANIA_TECHNOLOGIES_PRIVATE_LIMITED",
+        "target_id": "TEST_MODE",
+        "type": "HAS_CONCEPT",
+        "properties": {}
+      }
+    ]
+  },
+  {
+    "doc_id": "softmania_master_dataset",
+    "chunk_id": "softmania_master_dataset_chunk_14",
+    "nodes": [
+      {
+        "id": "SOFTMANIA",
+        "type": "Company",
+        "properties": {
+          "source_url": "https://www.softmania.in/contact-us"
+        }
+      },
+      {
+        "id": "CONTACT_US_PAGE",
+        "type": "Document",
+        "properties": {
+          "source_url": "https://www.softmania.in/contact-us",
+          "document_type": "Web Page"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "source_id": "SOFTMANIA",
+        "target_id": "CONTACT_US_PAGE",
+        "type": "HOSTS",
+        "properties": {}
+      }
+    ]
+  }
+]

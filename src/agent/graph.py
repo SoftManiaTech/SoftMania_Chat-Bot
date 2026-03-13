@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph, END
 from src.agent.state import AgentState
-from src.agent.nodes import router_node, decomposer_node, evaluator_node, synthesizer_node
+from src.agent.nodes import router_node, decomposer_node, evaluator_node, synthesizer_node, compressor_node
 from src.agent.retrievers import hybrid_retriever_node
 from src.config import Config
 from src.logger import setup_logger
@@ -28,6 +28,7 @@ workflow = StateGraph(AgentState)
 workflow.add_node("router", router_node)
 workflow.add_node("decomposer", decomposer_node)
 workflow.add_node("retriever", hybrid_retriever_node)
+workflow.add_node("compressor", compressor_node)
 workflow.add_node("evaluator", evaluator_node)
 workflow.add_node("synthesizer", synthesizer_node)
 
@@ -38,9 +39,12 @@ workflow.add_edge("router", "decomposer")
 
 workflow.add_edge("decomposer", "retriever")
 
-# After retrieving context, we evaluate if we need to synthesize or jump context
+# Force everything from retriever to go through the compressor first to reduce tokens
+workflow.add_edge("retriever", "compressor")
+
+# After compressing context, we evaluate if we need to synthesize or jump context
 workflow.add_conditional_edges(
-    "retriever",
+    "compressor",
     check_sufficiency_or_hop,
     {
         "synthesize": "synthesizer",

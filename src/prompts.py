@@ -45,6 +45,13 @@ SYNTHESIZER_PROMPT = ChatPromptTemplate.from_messages([
     ("human", "Question: {question}\n\nContext: {context}")
 ])
 
+COMPRESSOR_PROMPT = ChatPromptTemplate.from_messages([
+    ("system", f"You are a context compressor. Extract and synthesize ONLY the critical facts, entities, and relationships "
+               f"from the provided Raw Context that are directly relevant to answering the User Question and Sub-Queries. "
+               f"Discard irrelevant filler text to save token space for downstream reasoning. \n{SYNTHESIZER_GUARDRAIL}"),
+    ("human", "Question: {question}\nSub-Queries: {sub_queries}\n\nRaw Context:\n{context}")
+])
+
 # ---------------------------------------------------------
 # Ingestion & Extraction Prompts
 # ---------------------------------------------------------

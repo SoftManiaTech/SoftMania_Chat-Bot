@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoftMania RAG Chat</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:transparent}
+
+  /* ── Floating Bubble ── */
+  #chat-bubble{
+    position:fixed;bottom:24px;right:24px;width:56px;height:56px;
+    border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    color:#fff;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;box-shadow:0 4px 20px rgba(99,102,241,.45);
+    transition:transform .2s;z-index:9999;border:none;font-size:24px;
+  }
+  #chat-bubble:hover{transform:scale(1.1)}
+  #chat-bubble.hidden{display:none}
+
+  /* ── Chat Window ── */
+  #chat-window{
+    position:fixed;bottom:24px;right:24px;width:380px;height:520px;
+    border-radius:16px;background:#0f0f13;
+    box-shadow:0 8px 40px rgba(0,0,0,.55);
+    display:none;flex-direction:column;z-index:10000;
+    border:1px solid rgba(255,255,255,.08);overflow:hidden;
+  }
+  #chat-window.open{display:flex}
+
+  /* Header */
+  #chat-header{
+    padding:14px 16px;display:flex;align-items:center;justify-content:space-between;
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    color:#fff;font-weight:600;font-size:15px;flex-shrink:0;
+  }
+  #chat-header button{
+    background:none;border:none;color:#fff;font-size:20px;cursor:pointer;
+    opacity:.8;transition:opacity .15s;
+  }
+  #chat-header button:hover{opacity:1}
+
+  /* Messages Area */
+  #messages{
+    flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;
+    scrollbar-width:thin;scrollbar-color:#333 transparent;
+  }
+  .msg{
+    max-width:82%;padding:10px 14px;border-radius:14px;
+    font-size:13.5px;line-height:1.5;word-wrap:break-word;
+    animation:fadeIn .25s ease;
+  }
+  .msg.user{
+    align-self:flex-end;background:#6366f1;color:#fff;
+    border-bottom-right-radius:4px;
+  }
+  .msg.bot{
+    align-self:flex-start;background:#1e1e2a;color:#e2e2f0;
+    border-bottom-left-radius:4px;border:1px solid rgba(255,255,255,.06);
+  }
+  .msg.bot.typing{opacity:.6;font-style:italic}
+
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+  /* Input Area */
+  #input-area{
+    display:flex;gap:8px;padding:12px;border-top:1px solid rgba(255,255,255,.08);
+    background:#13131a;flex-shrink:0;
+  }
+  #chat-input{
+    flex:1;border:1px solid rgba(255,255,255,.1);border-radius:10px;
+    padding:10px 14px;font-size:13.5px;outline:none;
+    background:#1a1a25;color:#e2e2f0;transition:border-color .2s;
+  }
+  #chat-input:focus{border-color:#6366f1}
+  #chat-input::placeholder{color:#555}
+
+  #send-btn{
+    width:40px;height:40px;border-radius:10px;border:none;
+    background:#6366f1;color:#fff;font-size:18px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .2s;flex-shrink:0;
+  }
+  #send-btn:hover{background:#4f46e5}
+  #send-btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Welcome */
+  .welcome{
+    text-align:center;color:#888;font-size:13px;padding:20px 10px;
+    line-height:1.6;
+  }
+  .welcome strong{color:#a5b4fc}
+</style>
+</head>
+<body>
+
+<!-- Floating Chat Bubble -->
+<button id="chat-bubble" onclick="toggleChat()" aria-label="Open chat">💬</button>
+
+<!-- Chat Window -->
+<div id="chat-window">
+  <div id="chat-header">
+    <span>🤖 SoftMania RAG</span>
+    <button onclick="toggleChat()" aria-label="Close chat">✕</button>
+  </div>
+  <div id="messages">
+    <div class="welcome">
+      <strong>Welcome!</strong><br>
+      Ask me anything about SoftMania's Splunk training, labs, courses, or policies.
+    </div>
+  </div>
+  <div id="input-area">
+    <input id="chat-input" type="text" placeholder="Type your question…" autocomplete="off">
+    <button id="send-btn" onclick="sendMessage()" aria-label="Send">➤</button>
+  </div>
+</div>
+
+<script>
+  // ── Config ──
+  // Auto-detect the API base from where this widget is served
+  const API_BASE = window.location.origin;
+
+  // ── Toggle ──
+  function toggleChat() {
+    const win = document.getElementById('chat-window');
+    const bubble = document.getElementById('chat-bubble');
+    const isOpen = win.classList.toggle('open');
+    bubble.classList.toggle('hidden', isOpen);
+    if (isOpen) document.getElementById('chat-input').focus();
+  }
+
+  // ── Send Message ──
+  async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    addMessage(text, 'user');
+    input.value = '';
+    input.focus();
+
+    const btn = document.getElementById('send-btn');
+    btn.disabled = true;
+
+    // Show typing indicator
+    const typingEl = addMessage('Thinking…', 'bot typing');
+
+    try {
+      const res = await fetch(`${API_BASE}/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: text })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || `Server error ${res.status}`);
+      }
+
+      const data = await res.json();
+      typingEl.remove();
+      addMessage(data.answer || 'No response.', 'bot');
+    } catch (err) {
+      typingEl.remove();
+      addMessage(`⚠️ ${err.message}`, 'bot');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── Add Message Bubble ──
+  function addMessage(text, cls) {
+    const el = document.createElement('div');
+    el.className = `msg ${cls}`;
+    el.textContent = text;
+    const container = document.getElementById('messages');
+    container.appendChild(el);
+    container.scrollTop = container.scrollHeight;
+    return el;
+  }
+
+  // ── Enter Key ──
+  document.getElementById('chat-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+</script>
+</body>
+</html>

@@ -10,5 +10,6 @@ class AgentState(TypedDict):
     sub_queries: List[str]
     # We use Annotated with operator.add so that parallel sub-query results get appended
     retrieved_context: Annotated[List[str], operator.add]
+    compressed_context: str
     hop_count: int
     final_answer: str
