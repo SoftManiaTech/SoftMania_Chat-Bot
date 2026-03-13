@@ -49,11 +49,13 @@ class Config:
     @classmethod
     async def get_pg_pool(cls):
         """Returns an asyncpg connection pool for Neon PGVector."""
-        if cls._pg_pool is None and NEON_DATABASE_URL:
-            if not NEON_DATABASE_URL:
-                return None
+        neon_url = os.getenv("NEON_DATABASE_URL")
+        if not neon_url:
+            raise ValueError("NEON_DATABASE_URL environment variable is missing. Please set it in your .env file or Hugging Face Space Secrets.")
+            
+        if cls._pg_pool is None:
             cls._pg_pool = await asyncpg.create_pool(
-                dsn=NEON_DATABASE_URL,
+                dsn=neon_url,
                 min_size=1,
                 max_size=20 # PgBouncer on Neon can handle this
             )
