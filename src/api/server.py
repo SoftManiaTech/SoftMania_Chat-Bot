@@ -13,7 +13,7 @@ from src.logger import setup_logger
 
 logger = setup_logger(__name__)
 
-app = FastAPI(title="Advanced Multi-Hop RAG API")
+app = FastAPI(title="SoftMania Chat-Bot API")
 
 # CORS — allow iframe embedding and cross-origin requests from any domain
 app.add_middleware(
@@ -50,7 +50,7 @@ LANDING_HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Advanced Multi-Hop RAG API</title>
+<title>SoftMania Chat-Bot API</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a0f;color:#e2e2f0;min-height:100vh}
@@ -79,14 +79,14 @@ LANDING_HTML = """<!DOCTYPE html>
 </head>
 <body>
 <div class="container">
-  <h1>🚀 Advanced Multi-Hop RAG API</h1>
+  <h1>🚀 SoftMania Chat-Bot API</h1>
   <p class="sub">Hybrid LangGraph Agent · Neon PGVector · Neo4j Knowledge Graph</p>
 
   <h2>📡 API Endpoints</h2>
   <table>
     <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
     <tr><td><span class="badge get">GET</span></td><td><code>/health</code></td><td>Health check</td></tr>
-    <tr><td><span class="badge post">POST</span></td><td><code>/query</code></td><td>Ask a question (multi-hop RAG)</td></tr>
+    <tr><td><span class="badge post">POST</span></td><td><code>/query</code></td><td>Interact with the intelligence engine</td></tr>
     <tr><td><span class="badge post">POST</span></td><td><code>/ingest</code></td><td>Upload a document for ingestion</td></tr>
     <tr><td><span class="badge del">DELETE</span></td><td><code>/clear</code></td><td>Purge all database records</td></tr>
   </table>
@@ -108,7 +108,7 @@ LANDING_HTML = """<!DOCTYPE html>
     <iframe src="/static/widget.html" title="Chat Widget Preview"></iframe>
   </div>
 
-  <div class="footer">SoftMania Technologies · Advanced Multi-Hop RAG · Powered by LangGraph</div>
+  <div class="footer">SoftMania Technologies · Intelligence Engine · Powered by LangGraph</div>
 </div>
 
 <!-- Render the actual Chatbot Widget on this Landing Page -->
@@ -136,7 +136,7 @@ async def landing_page():
 @app.get("/health")
 async def health_check():
     """Health check endpoint for container probes."""
-    return {"status": "healthy", "service": "Advanced Multi-Hop RAG API"}
+    return {"status": "healthy", "service": "SoftMania Chat-Bot API"}
 
 @app.post("/ingest")
 async def ingest_file(file: UploadFile = File(...)):
@@ -181,7 +181,7 @@ async def ingest_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/query", response_model=QueryResponse)
-async def query_rag(request: QueryRequest):
+async def query_softmania(request: QueryRequest):
     logger.info(f"--- API REQUEST: /query --- Question: '{request.question}'")
     try:
         # We start the LangGraph with just the question.

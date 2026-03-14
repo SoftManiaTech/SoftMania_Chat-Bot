@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SoftMania RAG Chat</title>
+<title>SoftMania Chat-Bot</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:transparent}
@@ -48,7 +48,7 @@
   }
   .msg{
     max-width:82%;padding:10px 14px;border-radius:14px;
-    font-size:13.5px;line-height:1.5;word-wrap:break-word;
+    font-size:13.5px;line-height:1.6;word-wrap:break-word;
     animation:fadeIn .25s ease;
   }
   .msg.user{
@@ -60,6 +60,17 @@
     border-bottom-left-radius:4px;border:1px solid rgba(255,255,255,.06);
   }
   .msg.bot.typing{opacity:.6;font-style:italic}
+
+  /* ── Markdown styles inside bot messages ── */
+  .msg.bot strong{color:#c4b5fd;font-weight:600}
+  .msg.bot a{color:#818cf8;text-decoration:underline;text-underline-offset:2px}
+  .msg.bot a:hover{color:#a5b4fc}
+  .msg.bot ul,.msg.bot ol{margin:6px 0 6px 18px;padding:0}
+  .msg.bot li{margin-bottom:4px}
+  .msg.bot p{margin-bottom:8px}
+  .msg.bot p:last-child{margin-bottom:0}
+  .msg.bot code{background:#13131a;padding:1px 5px;border-radius:4px;font-size:12px;color:#c4b5fd}
+  .msg.bot h1,.msg.bot h2,.msg.bot h3{font-size:14px;color:#a5b4fc;font-weight:600;margin:10px 0 4px}
 
   @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
@@ -75,15 +86,16 @@
   }
   #chat-input:focus{border-color:#6366f1}
   #chat-input::placeholder{color:#555}
+  #chat-input:disabled{opacity:.5;cursor:not-allowed}
 
   #send-btn{
     width:40px;height:40px;border-radius:10px;border:none;
     background:#6366f1;color:#fff;font-size:18px;cursor:pointer;
     display:flex;align-items:center;justify-content:center;
-    transition:background .2s;flex-shrink:0;
+    transition:background .2s,opacity .2s;flex-shrink:0;
   }
-  #send-btn:hover{background:#4f46e5}
-  #send-btn:disabled{opacity:.4;cursor:not-allowed}
+  #send-btn:hover:not(:disabled){background:#4f46e5}
+  #send-btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
 
   /* Welcome */
   .welcome{
@@ -101,7 +113,7 @@
 <!-- Chat Window -->
 <div id="chat-window">
   <div id="chat-header">
-    <span>🤖 SoftMania RAG</span>
+    <span>🤖 SoftMania Chat-Bot</span>
     <button onclick="toggleChat()" aria-label="Close chat">✕</button>
   </div>
   <div id="messages">
@@ -112,14 +124,14 @@
   </div>
   <div id="input-area">
     <input id="chat-input" type="text" placeholder="Type your question…" autocomplete="off">
-    <button id="send-btn" onclick="sendMessage()" aria-label="Send">➤</button>
+    <button id="send-btn" aria-label="Send">➤</button>
   </div>
 </div>
 
 <script>
   // ── Config ──
-  // Auto-detect the API base from where this widget is served
   const API_BASE = window.location.origin;
+  let isSending = false; // HARD LOCK — prevents ALL duplicate sends
 
   // ── Toggle ──
   function toggleChat() {
@@ -130,21 +142,88 @@
     if (isOpen) document.getElementById('chat-input').focus();
   }
 
-  // ── Send Message ──
+  // ── Markdown → HTML renderer ──
+  function mdToHtml(text) {
+    if (!text) return '';
+
+    // Strip raw citation metadata
+    text = text.replace(/\n*Sources?:\s*[\d,\s]+$/i, '');
+    text = text.replace(/\s*\[\^?\d+\^?\]/g, '');          // [1], [^1^], [^2^]
+    text = text.replace(/\s*\[[\d,\s]+\]/g, '');            // [1, 2, 3]
+
+    let html = text
+      // Escape HTML entities
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+
+      // Headers
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+
+      // Bold: **text**
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+
+      // Italic: *text*
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+
+      // Inline code: `text`
+      .replace(/`(.+?)`/g, '<code>$1</code>')
+
+      // Links: [text](url)
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+
+      // Bare URLs → clickable links
+      .replace(/(^|[^"'])(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>')
+
+      // Unordered list items: - item or * item
+      .replace(/^[\-\*]\s+(.+)$/gm, '<li>$1</li>')
+
+      // Ordered list items: 1. item
+      .replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
+
+    // Wrap consecutive <li> in <ul>
+    html = html.replace(/((<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+
+    // Paragraphs: split on double newlines
+    html = html
+      .split(/\n{2,}/)
+      .map(block => {
+        block = block.trim();
+        if (!block) return '';
+        if (/^<(h[1-3]|ul|ol|li|div|p)/.test(block)) return block;
+        return '<p>' + block.replace(/\n/g, '<br>') + '</p>';
+      })
+      .join('');
+
+    // Remaining single newlines → <br>
+    html = html.replace(/([^>])\n([^<])/g, '$1<br>$2');
+
+    return html;
+  }
+
+  // ── Send Message (with hard lock) ──
   async function sendMessage() {
+    // ★ HARD LOCK: if already sending, completely ignore this call
+    if (isSending) return;
+
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
     if (!text) return;
 
-    addMessage(text, 'user');
-    input.value = '';
-    input.focus();
-
+    // Lock everything IMMEDIATELY before any async work
+    isSending = true;
     const btn = document.getElementById('send-btn');
     btn.disabled = true;
+    input.disabled = true;
+    input.placeholder = 'Waiting for response…';
+
+    addMessage(text, 'user', false);
+    input.value = '';
 
     // Show typing indicator
-    const typingEl = addMessage('Thinking…', 'bot typing');
+    const typingEl = addMessage('Thinking…', 'bot typing', false);
 
     try {
       const res = await fetch(`${API_BASE}/query`, {
@@ -160,33 +239,45 @@
 
       const data = await res.json();
       typingEl.remove();
-      addMessage(data.answer || 'No response.', 'bot');
+      addMessage(data.answer || 'No response.', 'bot', true);
     } catch (err) {
       typingEl.remove();
-      addMessage(`⚠️ ${err.message}`, 'bot');
+      addMessage('⚠️ ' + err.message, 'bot', false);
     } finally {
+      // ★ Unlock everything only after response is fully processed
+      isSending = false;
       btn.disabled = false;
+      input.disabled = false;
+      input.placeholder = 'Type your question…';
+      input.focus();
     }
   }
 
   // ── Add Message Bubble ──
-  function addMessage(text, cls) {
+  function addMessage(text, cls, renderMd) {
     const el = document.createElement('div');
-    el.className = `msg ${cls}`;
-    el.textContent = text;
+    el.className = 'msg ' + cls;
+    if (renderMd && cls.startsWith('bot')) {
+      el.innerHTML = mdToHtml(text);
+    } else {
+      el.textContent = text;
+    }
     const container = document.getElementById('messages');
     container.appendChild(el);
     container.scrollTop = container.scrollHeight;
     return el;
   }
 
-  // ── Enter Key ──
+  // ── Enter Key (also blocked by isSending) ──
   document.getElementById('chat-input').addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   });
+
+  // ── Click handler (replaces inline onclick to ensure single binding) ──
+  document.getElementById('send-btn').addEventListener('click', sendMessage);
 </script>
 </body>
 </html>

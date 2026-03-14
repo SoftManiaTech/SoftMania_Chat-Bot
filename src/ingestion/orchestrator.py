@@ -49,7 +49,10 @@ async def ingest_document(file_path: str) -> Dict[str, Any]:
         raise ValueError(f"Unsupported file extension: {suffix}")
         
     loader_class = loader_mapping[suffix]
-    loader = loader_class(str(path))
+    if loader_class == TextLoader:
+        loader = loader_class(str(path), autodetect_encoding=True)
+    else:
+        loader = loader_class(str(path))
     
     docs = loader.load()
     

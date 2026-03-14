@@ -1,76 +1,106 @@
 from langgraph.graph import StateGraph, END
 from src.agent.state import AgentState
-from src.agent.nodes import router_node, decomposer_node, evaluator_node, synthesizer_node, compressor_node
+from src.agent.nodes import router_node, decomposer_node, compressor_node, synthesizer_node
 from src.agent.retrievers import hybrid_retriever_node
 from src.config import Config
 from src.logger import setup_logger
 
 logger = setup_logger(__name__)
 
-def check_sufficiency_or_hop(state: AgentState):
+# ── Conditional Edge: After Router (3-Tier) ──
+def route_after_router(state: AgentState):
+    """Routes based on the 3-tier classification from the smart router."""
+    route = state.get("route_type", "simple")
+    
+    if route == "off_topic":
+        logger.info("--- GRAPH EDGE --- Off-topic detected. Skipping to END.")
+        return "end"
+    elif route == "complex":
+        logger.info("--- GRAPH EDGE --- Complex query. Routing to Decomposer.")
+        return "decomposer"
+    else:
+        logger.info("--- GRAPH EDGE --- Simple query. Routing directly to Retriever.")
+        return "retriever"
+
+# ── Conditional Edge: After Retriever ──
+def route_after_retriever(state: AgentState):
+    """Simple queries skip the compressor to save time."""
+    if state.get("route_type") == "simple":
+        logger.info("--- GRAPH EDGE --- Simple query: skipping compressor → Synthesizer.")
+        return "synthesizer"
+    else:
+        logger.info("--- GRAPH EDGE --- Complex query: compressing context first.")
+        return "compressor"
+
+# ── Conditional Edge: After Synthesizer (Hop Check) ──
+def check_after_synthesis(state: AgentState):
     """
-    Conditional Edge router enforcing strict max hop boundaries.
+    After synthesis, check if the answer is sufficient or if we need another hop.
+    This replaces the old dedicated evaluator_node.
     """
+    is_sufficient = state.get("is_sufficient", True)
     hop_count = state.get("hop_count", 0)
     
-    # We enforce a strict max hop limit from config to prevent explosive latency
+    if is_sufficient:
+        logger.info("--- GRAPH EDGE --- Answer is sufficient. Done!")
+        return "end"
+    
     if hop_count >= Config.MAX_HOP_COUNT:
-        logger.warning(f"--- GRAPH EDGE --- Max Hop Count ({Config.MAX_HOP_COUNT}) Reached! Forcing Synthesis.")
-        return "synthesize"
-    else:
-        logger.info(f"--- GRAPH EDGE --- Routing to Evaluator to check context (Hop: {hop_count})")
-        return "evaluator"
+        logger.warning(f"--- GRAPH EDGE --- Max hops ({Config.MAX_HOP_COUNT}) reached. Forcing end.")
+        return "end"
+    
+    logger.info(f"--- GRAPH EDGE --- Insufficient context (hop {hop_count}). Looping back to Decomposer.")
+    return "decomposer"
 
-# Build the Graph
+# ── Build the Graph ──
 workflow = StateGraph(AgentState)
 
-# Add Nodes
+# Add Nodes (no evaluator_node — its logic is merged into synthesizer)
 workflow.add_node("router", router_node)
 workflow.add_node("decomposer", decomposer_node)
 workflow.add_node("retriever", hybrid_retriever_node)
 workflow.add_node("compressor", compressor_node)
-workflow.add_node("evaluator", evaluator_node)
 workflow.add_node("synthesizer", synthesizer_node)
 
-# Add Edges
+# ── Edges ──
 workflow.set_entry_point("router")
 
-workflow.add_edge("router", "decomposer")
+# After Router: 3-tier split
+workflow.add_conditional_edges(
+    "router",
+    route_after_router,
+    {
+        "end": END,                 # Off-topic → instant response, done
+        "retriever": "retriever",   # Simple → go straight to retriever
+        "decomposer": "decomposer"  # Complex → decompose first
+    }
+)
 
+# Decomposer always goes to Retriever
 workflow.add_edge("decomposer", "retriever")
 
-# Force everything from retriever to go through the compressor first to reduce tokens
-workflow.add_edge("retriever", "compressor")
-
-# After compressing context, we evaluate if we need to synthesize or jump context
+# After Retriever: simple skips compressor, complex compresses first
 workflow.add_conditional_edges(
-    "compressor",
-    check_sufficiency_or_hop,
+    "retriever",
+    route_after_retriever,
     {
-        "synthesize": "synthesizer",
-        "evaluator": "evaluator" 
+        "synthesizer": "synthesizer",
+        "compressor": "compressor"
     }
 )
 
-def evaluate_sufficiency_edge(state: AgentState):
-    if state.get("is_sufficient", False):
-        logger.info("--- GRAPH EDGE --- Context Sufficient! Routing to Synthesizer.")
-        return "synthesize"
-    else:
-        logger.info("--- GRAPH EDGE --- Context Insufficient! Routing back to Decomposer for more data.")
-        return "decomposer"
+# Compressor always goes to Synthesizer
+workflow.add_edge("compressor", "synthesizer")
 
-# After evaluating, we synthesize if possible, else decompose new questions based on missing gaps
+# After Synthesizer: check if done or need another hop
 workflow.add_conditional_edges(
-    "evaluator",
-    evaluate_sufficiency_edge,
+    "synthesizer",
+    check_after_synthesis,
     {
-        "synthesize": "synthesizer",
-        "decomposer": "decomposer" 
+        "end": END,
+        "decomposer": "decomposer"
     }
 )
-
-workflow.add_edge("synthesizer", END)
 
 # Compile the LangGraph engine
 graph_app = workflow.compile()

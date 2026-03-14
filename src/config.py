@@ -22,7 +22,8 @@ class Config:
     _pg_pool = None
     
     # Central LLM Configurations
-    PRIMARY_LLM_MODEL = "mistral-large-latest"
+    PRIMARY_LLM_MODEL = "mistral-large-latest"         # Used by ingestion (extraction)
+    FAST_LLM_MODEL = "open-mistral-nemo"               # Used by agent (router, decomposer, compressor, synthesizer)
     EMBEDDING_MODEL = "mistral-embed"
     DEFAULT_TEMPERATURE = 0.2
     
@@ -76,6 +77,16 @@ class Config:
         return ChatMistralAI(
             model=cls.PRIMARY_LLM_MODEL, 
             temperature=temp, 
+            api_key=MISTRAL_API_KEY
+        )
+
+    @classmethod
+    def get_fast_llm(cls, temperature: float = 0.0):
+        """Returns a fast, lightweight LLM for routing, decomposition, and compression."""
+        from langchain_mistralai import ChatMistralAI
+        return ChatMistralAI(
+            model=cls.FAST_LLM_MODEL,
+            temperature=temperature,
             api_key=MISTRAL_API_KEY
         )
 

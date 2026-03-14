@@ -52,7 +52,7 @@ def main():
     host = os.environ.get("HOST", "0.0.0.0")
     
     # We pass the application instance string for hot-reloading 
-    uvicorn.run("main:app", host=host, port=port)
+    uvicorn.run("main:app", host=host, port=port, reload=True)
 
 if __name__ == "__main__":
     main()

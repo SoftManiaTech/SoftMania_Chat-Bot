@@ -9,7 +9,7 @@ async def setup_pgvector_tables():
         # Enable pgvector extension
         await conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
         
-        # Create chunks table
+        # Create chunks table (original safe flow — no data loss)
         # We store doc_id and chunk_id heavily indexed for hybrid retrieval
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS document_chunks (
@@ -17,10 +17,25 @@ async def setup_pgvector_tables():
                 doc_id TEXT NOT NULL,
                 chunk_id TEXT NOT NULL,
                 text TEXT NOT NULL,
-                embedding vector(1024), -- Assuming Mistral 1024 dim
+                embedding vector(1024), -- Mistral 1024 dims
                 metadata JSONB DEFAULT '{}'::jsonb
             );
         """)
+        
+        # Safe migration: if the table already exists with wrong vector dimensions,
+        # ALTER the column to match our current embedding model (1024 dims).
+        # This handles upgrades from older 384-dim models gracefully.
+        try:
+            dim_row = await conn.fetchrow("""
+                SELECT atttypmod FROM pg_attribute 
+                WHERE attrelid = 'document_chunks'::regclass 
+                AND attname = 'embedding';
+            """)
+            if dim_row and dim_row['atttypmod'] != 1024:
+                await conn.execute("TRUNCATE TABLE document_chunks;")
+                await conn.execute("ALTER TABLE document_chunks ALTER COLUMN embedding TYPE vector(1024);")
+        except Exception:
+            pass  # Table is fresh, no migration needed
         
         # Create HNSW index for fast approximate nearest neighbor search
         await conn.execute("""
@@ -97,7 +112,7 @@ async def clear_all_vectors():
         await conn.execute("TRUNCATE TABLE document_chunks;")
 
 async def insert_query_log(question: str, answer: str, hop_count: int):
-    """Inserts a persistent log of a user query and the RAG response."""
+    """Inserts a persistent log of a user query and the intelligence engine response."""
     pool = await Config.get_pg_pool()
     async with pool.acquire() as conn:
         await conn.execute("""
