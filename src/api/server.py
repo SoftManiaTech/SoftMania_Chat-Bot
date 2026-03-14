@@ -110,6 +110,14 @@ LANDING_HTML = """<!DOCTYPE html>
 
   <div class="footer">SoftMania Technologies · Advanced Multi-Hop RAG · Powered by LangGraph</div>
 </div>
+
+<!-- Render the actual Chatbot Widget on this Landing Page -->
+<iframe src="{BASE_URL}/static/widget.html"
+        width="420" height="580"
+        style="border:none;position:fixed;bottom:0;right:0;z-index:9999;"
+        allow="clipboard-read; clipboard-write">
+</iframe>
+
 </body>
 </html>"""
 
