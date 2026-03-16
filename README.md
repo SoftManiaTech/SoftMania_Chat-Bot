@@ -1,12 +1,3 @@
----
-title: SoftMania Chat-Bot
-emoji: 🧠
-colorFrom: blue
-colorTo: purple
-sdk: docker
-app_port: 7860
-pinned: false
----
 
 # SoftMania Chat-Bot 🚀
 
@@ -68,3 +59,14 @@ The API will be available at `http://localhost:7860`.
 
 ---
 *Driven by the SoftMania Intelligence Engine.*
+
+
+---
+title: SoftMania Chat-Bot
+emoji: 🧠
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+---

@@ -26,8 +26,8 @@ ROUTER_PROMPT = ChatPromptTemplate.from_messages([
 
 Classify the user's question into exactly ONE of these categories:
 
-1. "off_topic" — The question has absolutely NOTHING to do with IT, learning, courses, or business. Examples: "What's the weather?", "Write me a poem", "Who is the president?"
-2. "simple" — The question is a factual lookup, greeting, or a query about anything related to IT, learning, or tech. If the user asks a short question or uses vague IT terms (like "projects", "labs", "courses", "query", "data", "logs") WITHOUT mentioning SoftMania, ASSUME it is about SoftMania and classify as simple to allow a database search. Examples: "Hi", "What is SoftMania?", "what projects i should learn?", "query ??", "data means?"
+1. "off_topic" — The question is irrelevant nonsense, general knowledge, or has NOTHING to do with IT, learning, courses, or business. CRITICAL: One-word non-tech words or random locations (e.g., "temple", "tempe", "chair") MUST be classified as off_topic. Examples: "What's the weather?", "Write me a poem", "temple", "apple", "Who is the president?"
+2. "simple" — The question is a factual lookup, greeting, or a query about anything related to IT, learning, or tech. Only classify as simple if the query uses recognized IT terminology (like "projects", "labs", "courses", "query", "data", "logs"). Examples: "Hi", "What is SoftMania?", "what projects i should learn?", "query ??", "data means?"
 3. "complex" — The question requires combining multiple pieces of information, comparisons, or multi-hop reasoning about SoftMania. Examples: "Compare rental lab pricing with video add-on costs", "Explain the full learning methodology and how it differs from traditional approaches"
 
 {ROUTER_GUARDRAIL}"""),
@@ -58,8 +58,10 @@ You have access to the following official SoftMania Portal Links:
 {{portal_links}}
 
 CRITICAL INSTRUCTION: Analyze the user's question and your answer to determine the relevant `page_type` (e.g., if discussing labs, the type is 'labs'; if discussing courses, the type is 'course'). 
-At the VERY END of your response, you MUST add a section titled "**Related Pages:**" and provide a bulleted list of the exact markdown links from the list above that match the relevant topics. 
-Example:
+ONLY if you have generated a meaningful answer from the provided context, you MUST add a section titled "**Related Pages:**" at the VERY END of your response and provide a bulleted list of the exact markdown links from the list above that match the relevant topics.
+If you are unable to answer or if the context is insufficient, do NOT add the Related Pages section.
+
+Example (only if answer is present):
 **Related Pages:**
 - [Splunk project-based laboratory environments for practice](https://splunklab.softmania.in/project-course-based-labs)
 
