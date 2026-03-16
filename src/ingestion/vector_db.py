@@ -61,6 +61,9 @@ async def setup_pgvector_tables():
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );
         """)
+        
+        # Create Portal Links table for CRUD API
+        await setup_portal_links_table(conn)
 
 async def batch_insert_chunks(doc_id: str, chunks: List[Dict[str, Any]]):
     """
@@ -119,4 +122,61 @@ async def insert_query_log(question: str, answer: str, hop_count: int):
             INSERT INTO query_logs (question, answer, hop_count)
             VALUES ($1, $2, $3)
         """, question, answer, hop_count)
+
+# ---------------------------------------------------------
+# Portal Links CRUD Operations
+# ---------------------------------------------------------
+
+async def setup_portal_links_table(conn):
+    """Creates the portal_links table (called internally by setup_pgvector_tables)."""
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS portal_links (
+            id SERIAL PRIMARY KEY,
+            page_url TEXT UNIQUE NOT NULL,
+            domain TEXT NOT NULL,
+            page_type TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+
+async def create_portal_link(page_url: str, domain: str, page_type: str, summary: str):
+    """Inserts a new portal link."""
+    pool = await Config.get_pg_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow("""
+            INSERT INTO portal_links (page_url, domain, page_type, summary)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (page_url) DO UPDATE 
+            SET domain=$2, page_type=$3, summary=$4 
+            RETURNING id, page_url, domain, page_type, summary
+        """, page_url, domain, page_type, summary)
+        return dict(row) if row else None
+
+async def get_all_portal_links() -> List[Dict[str, Any]]:
+    """Retrieves all portal links."""
+    pool = await Config.get_pg_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch("SELECT id, page_url, domain, page_type, summary FROM portal_links ORDER BY id ASC")
+        return [dict(row) for row in rows]
+
+async def update_portal_link(link_id: int, page_url: str, domain: str, page_type: str, summary: str):
+    """Updates an existing portal link by ID."""
+    pool = await Config.get_pg_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow("""
+            UPDATE portal_links 
+            SET page_url=$2, domain=$3, page_type=$4, summary=$5
+            WHERE id=$1
+            RETURNING id, page_url, domain, page_type, summary
+        """, link_id, page_url, domain, page_type, summary)
+        return dict(row) if row else None
+
+async def delete_portal_link(link_id: int):
+    """Deletes a portal link by ID."""
+    pool = await Config.get_pg_pool()
+    async with pool.acquire() as conn:
+        result = await conn.execute("DELETE FROM portal_links WHERE id=$1", link_id)
+        # result typically looks like "DELETE 1" or "DELETE 0"
+        return result.endswith("1")
 

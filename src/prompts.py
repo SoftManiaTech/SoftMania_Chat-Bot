@@ -26,8 +26,8 @@ ROUTER_PROMPT = ChatPromptTemplate.from_messages([
 
 Classify the user's question into exactly ONE of these categories:
 
-1. "off_topic" — The question has NOTHING to do with SoftMania, Splunk training, IT courses, labs, pricing, policies, contact info, or the company. Examples: "What's the weather?", "Write me a poem", "Who is the president?"
-2. "simple" — The question is a simple factual lookup, greeting, or single-hop question about SoftMania. Examples: "Hi", "What is SoftMania?", "What is the email?", "How many learners trained?"
+1. "off_topic" — The question has absolutely NOTHING to do with IT, learning, courses, or business. Examples: "What's the weather?", "Write me a poem", "Who is the president?"
+2. "simple" — The question is a factual lookup, greeting, or a query about anything related to IT, learning, or tech. If the user asks a short question or uses vague IT terms (like "projects", "labs", "courses", "query", "data", "logs") WITHOUT mentioning SoftMania, ASSUME it is about SoftMania and classify as simple to allow a database search. Examples: "Hi", "What is SoftMania?", "what projects i should learn?", "query ??", "data means?"
 3. "complex" — The question requires combining multiple pieces of information, comparisons, or multi-hop reasoning about SoftMania. Examples: "Compare rental lab pricing with video add-on costs", "Explain the full learning methodology and how it differs from traditional approaches"
 
 {ROUTER_GUARDRAIL}"""),
@@ -51,11 +51,25 @@ SYNTHESIZER_PROMPT = ChatPromptTemplate.from_messages([
 Your task:
 1. Answer the user's question using ONLY the provided context. Write in a warm, professional tone.
 2. Format your answer beautifully using markdown: use **bold** for key terms, bullet points for lists, and proper paragraphs.
-3. If the context contains any URLs or website links, include them as clickable markdown links like [Visit SoftMania](https://softmania.in). Always include relevant reference links at the end of your answer.
-4. Do NOT include raw citation numbers like [1], [2], [^1^] or "Sources: 1, 2, 3" in the answer. Write naturally.
-5. Do NOT reveal pricing, costs, fees, or subscription amounts UNLESS the user explicitly asks about pricing, plans, cost, or fees. If the user asks a general question, focus on features and benefits only.
-6. If the context does NOT contain enough information to fully answer the question, set is_sufficient to false. If you can fully answer, set is_sufficient to true.
-7. If the question is conversational or asks for general knowledge, answer politely using your internal knowledge and set is_sufficient to true.
+
+---
+LINK INJECTION RULES:
+You have access to the following official SoftMania Portal Links:
+{{portal_links}}
+
+CRITICAL INSTRUCTION: Analyze the user's question and your answer to determine the relevant `page_type` (e.g., if discussing labs, the type is 'labs'; if discussing courses, the type is 'course'). 
+At the VERY END of your response, you MUST add a section titled "**Related Pages:**" and provide a bulleted list of the exact markdown links from the list above that match the relevant topics. 
+Example:
+**Related Pages:**
+- [Splunk project-based laboratory environments for practice](https://splunklab.softmania.in/project-course-based-labs)
+
+DO NOT hallucinate URLs. Use ONLY the exact URLs provided in the list above.
+---
+
+3. Do NOT include raw citation numbers like [1], [2], [^1^] or "Sources: 1, 2, 3" in the answer. Write naturally.
+4. Do NOT reveal pricing, costs, fees, or subscription amounts UNLESS the user explicitly asks about pricing, plans, cost, or fees. If the user asks a general question, focus on features and benefits only.
+5. If the context does NOT contain enough information to fully answer the question, set is_sufficient to false. If you can fully answer, set is_sufficient to true.
+6. If the question is conversational or asks for general knowledge, answer politely using your internal knowledge and set is_sufficient to true.
 
 {SYNTHESIZER_GUARDRAIL}"""),
     ("human", "Question: {question}\n\nContext: {context}")

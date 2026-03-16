@@ -117,7 +117,11 @@ async def synthesizer_node(state: AgentState) -> Dict[str, Any]:
     chain = SYNTHESIZER_PROMPT | structured_llm
     
     try:
-        result = await chain.ainvoke({"question": state["question"], "context": context_str})
+        result = await chain.ainvoke({
+            "question": state["question"], 
+            "context": context_str,
+            "portal_links": state.get("portal_links", "No links available.")
+        })
         if not result:
             raise ValueError("LLM returned empty structured output.")
         

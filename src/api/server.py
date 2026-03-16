@@ -7,13 +7,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from src.agent.graph import graph_app
 from src.ingestion.orchestrator import ingest_document
-from src.ingestion.vector_db import clear_all_vectors, insert_query_log
+from src.ingestion.vector_db import clear_all_vectors, insert_query_log, get_all_portal_links
 from src.ingestion.graph_db import clear_all_graph_data
+from src.api.active_links import router as links_router
 from src.logger import setup_logger
 
 logger = setup_logger(__name__)
 
 app = FastAPI(title="SoftMania Chat-Bot API")
+
+# Include the new Link Management router
+app.include_router(links_router)
 
 # CORS — allow iframe embedding and cross-origin requests from any domain
 app.add_middleware(
@@ -124,7 +128,6 @@ LANDING_HTML = """<!DOCTYPE html>
 @app.get("/", response_class=HTMLResponse)
 async def landing_page():
     """Landing page with usage guide and embeddable widget preview."""
-    from starlette.requests import Request
     # Inject the actual base URL for the embed snippet
     base_url = os.getenv("SPACE_HOST", "")
     if base_url and not base_url.startswith("http"):
@@ -184,11 +187,28 @@ async def ingest_file(file: UploadFile = File(...)):
 async def query_softmania(request: QueryRequest):
     logger.info(f"--- API REQUEST: /query --- Question: '{request.question}'")
     try:
-        # We start the LangGraph with just the question.
-        initial_state = {"question": request.question, "hop_count": 0, "retrieved_context": []}
+        # Fetch active links from the database to inject into the prompt
+        try:
+            links_data = await get_all_portal_links()
+            formatted_links = "\n".join(
+                f"- **{link['page_type'].title()}** ({link['domain']}): [{link['summary']}]({link['page_url']})" 
+                for link in links_data
+            )
+            if not formatted_links:
+                formatted_links = "No active portal links currently available."
+        except Exception as e:
+            logger.warning(f"Failed to fetch portal links for injection: {e}")
+            formatted_links = "Error fetching links."
+
+        # We start the LangGraph with the question and the fetched links
+        initial_state = {
+            "question": request.question, 
+            "hop_count": 0, 
+            "retrieved_context": [],
+            "portal_links": formatted_links  # Injected directly into state
+        }
         
         # We use ainvoke for asynchronous execution of the graph
-        # This will trace automatically via LangSmith if LANGCHAIN_TRACING_V2 is set
         result = await graph_app.ainvoke(initial_state)
         
         answer = result.get("final_answer", "No answer generated.")
