@@ -8,7 +8,9 @@
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:transparent}
 
-  /* ── Floating Bubble ── */
+  /* ══════════════════════════════════════════
+     FLOATING BUBBLE
+     ══════════════════════════════════════════ */
   #chat-bubble{
     position:fixed;bottom:24px;right:24px;width:56px;height:56px;
     border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);
@@ -19,64 +21,114 @@
   #chat-bubble:hover{transform:scale(1.1)}
   #chat-bubble.hidden{display:none}
 
-  /* ── Chat Window ── */
+  /* ══════════════════════════════════════════
+     CHAT WINDOW — Default (floating card)
+     ══════════════════════════════════════════ */
   #chat-window{
     position:fixed;bottom:24px;right:24px;width:380px;height:520px;
     border-radius:16px;background:#0f0f13;
     box-shadow:0 8px 40px rgba(0,0,0,.55);
     display:none;flex-direction:column;z-index:10000;
     border:1px solid rgba(255,255,255,.08);overflow:hidden;
+    transition:all .3s cubic-bezier(.4,0,.2,1);
   }
   #chat-window.open{display:flex}
-  #chat-window.maximized {
-    width: 70%;
-    height: 80%;
-    bottom: 24px;
-    right: 24px;
-    border-radius: 20px;
+
+  /* ══════════════════════════════════════════
+     FULL-SCREEN MODE
+     ══════════════════════════════════════════ */
+  #chat-window.fullscreen{
+    position:fixed;inset:0;width:100vw;height:100vh;
+    border-radius:0;background:#0f0f13;
+    box-shadow:none;border:none;
+    animation:scaleIn .3s ease;
   }
-  @media (max-width: 768px) {
-    #chat-window.maximized {
-      width: 95%;
-      height: 90%;
-      bottom: 10px;
-      right: 10px;
-    }
+  #chat-window.fullscreen #chat-header{
+    max-width:760px;margin:0 auto;width:100%;
+    background:transparent;padding:16px 24px;
+  }
+  #chat-window.fullscreen #messages{
+    max-width:760px;margin:0 auto;width:100%;
+    padding:20px 24px 20px;
+  }
+  #chat-window.fullscreen #input-wrapper{
+    max-width:760px;margin:0 auto;width:100%;
+    padding:0 24px 8px;
+  }
+  #chat-window.fullscreen #input-area{
+    border-radius:24px;border:1px solid rgba(255,255,255,.12);
+    background:#1a1a25;
+  }
+  #chat-window.fullscreen #chat-footer{display:block}
+
+  /* Responsive — Tablet */
+  @media(max-width:1024px){
+    #chat-window.fullscreen #messages,
+    #chat-window.fullscreen #input-wrapper,
+    #chat-window.fullscreen #chat-header{max-width:90%}
+  }
+  /* Responsive — Mobile */
+  @media(max-width:768px){
+    #chat-window.fullscreen #messages,
+    #chat-window.fullscreen #input-wrapper,
+    #chat-window.fullscreen #chat-header{max-width:100%;padding-left:12px;padding-right:12px}
   }
 
-  /* Header */
+  @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+
+  /* ══════════════════════════════════════════
+     HEADER
+     ══════════════════════════════════════════ */
   #chat-header{
     padding:14px 16px;display:flex;align-items:center;justify-content:space-between;
     background:linear-gradient(135deg,#6366f1,#8b5cf6);
     color:#fff;font-weight:600;font-size:15px;flex-shrink:0;
   }
+  #chat-header .header-controls{display:flex;gap:10px;align-items:center}
   #chat-header button{
-    background:none;border:none;color:#fff;font-size:20px;cursor:pointer;
-    opacity:.8;transition:opacity .15s;
+    background:none;border:none;color:#fff;font-size:18px;cursor:pointer;
+    opacity:.8;transition:opacity .15s;width:28px;height:28px;
+    display:flex;align-items:center;justify-content:center;border-radius:6px;
   }
-  #chat-header button:hover{opacity:1}
+  #chat-header button:hover{opacity:1;background:rgba(255,255,255,.15)}
 
-  /* Messages Area */
+  /* ══════════════════════════════════════════
+     MESSAGES AREA
+     ══════════════════════════════════════════ */
   #messages{
-    flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;
-    scrollbar-width:thin;scrollbar-color:#333 transparent;
+    flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:6px;
+    scrollbar-width:thin;scrollbar-color:#333 transparent;position:relative;
   }
+
+  /* Welcome / Empty State */
+  .welcome{text-align:center;color:#888;font-size:13px;padding:20px 10px;line-height:1.6}
+  .welcome strong{color:#a5b4fc}
+  .fullscreen-welcome{
+    display:none;flex:1;align-items:center;justify-content:center;
+    flex-direction:column;gap:16px;
+  }
+  .fullscreen-welcome h2{font-size:26px;color:#e2e2f0;font-weight:500}
+  #chat-window.fullscreen .fullscreen-welcome{display:flex}
+  #chat-window.fullscreen .welcome-default{display:none}
+
+  /* Message Bubble */
+  .msg-wrapper{display:flex;flex-direction:column;gap:2px;animation:fadeIn .25s ease}
+  .msg-wrapper.user-side{align-items:flex-end}
+  .msg-wrapper.bot-side{align-items:flex-start}
+
   .msg{
     max-width:82%;padding:10px 14px;border-radius:14px;
     font-size:13.5px;line-height:1.6;word-wrap:break-word;
-    animation:fadeIn .25s ease;
   }
   .msg.user{
-    align-self:flex-end;background:#6366f1;color:#fff;
-    border-bottom-right-radius:4px;
+    background:#6366f1;color:#fff;border-bottom-right-radius:4px;
   }
   .msg.bot{
-    align-self:flex-start;background:#1e1e2a;color:#e2e2f0;
-    border-bottom-left-radius:4px;border:1px solid rgba(255,255,255,.06);
+    background:#1e1e2a;color:#e2e2f0;border-bottom-left-radius:4px;
+    border:1px solid rgba(255,255,255,.06);
   }
-  .msg.bot.typing{opacity:.6;font-style:italic}
 
-  /* ── Markdown styles inside bot messages ── */
+  /* Markdown inside bot */
   .msg.bot strong{color:#c4b5fd;font-weight:600}
   .msg.bot a{color:#818cf8;text-decoration:underline;text-underline-offset:2px}
   .msg.bot a:hover{color:#a5b4fc}
@@ -89,7 +141,55 @@
 
   @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
-  /* Input Area */
+  /* Timestamp */
+  .msg-time{display:block;font-size:10px;color:#666;margin-top:2px;padding:0 4px}
+  .msg-wrapper.user-side .msg-time{text-align:right}
+  .msg-wrapper.bot-side .msg-time{text-align:left}
+
+  /* Action Buttons (like, dislike, copy) */
+  .msg-actions{display:flex;gap:6px;padding:2px 4px;margin-top:2px}
+  .msg-actions button{
+    background:none;border:none;cursor:pointer;font-size:14px;
+    opacity:.4;transition:opacity .15s,transform .15s;padding:2px 4px;
+    border-radius:4px;color:#aaa;
+  }
+  .msg-actions button:hover{opacity:.9;background:rgba(255,255,255,.06)}
+  .msg-actions button.active-like{opacity:1;color:#4ade80}
+  .msg-actions button.active-dislike{opacity:1;color:#f87171}
+  .msg-actions button.copied{opacity:1;color:#6366f1}
+
+  /* ══════════════════════════════════════════
+     TYPING INDICATOR (3-dot bounce)
+     ══════════════════════════════════════════ */
+  .typing-dots{display:inline-flex;gap:4px;padding:10px 14px}
+  .typing-dots span{
+    width:8px;height:8px;border-radius:50%;background:#6366f1;
+    animation:dotBounce 1.4s infinite;
+  }
+  .typing-dots span:nth-child(2){animation-delay:.2s}
+  .typing-dots span:nth-child(3){animation-delay:.4s}
+  @keyframes dotBounce{
+    0%,60%,100%{transform:translateY(0);opacity:.4}
+    30%{transform:translateY(-8px);opacity:1}
+  }
+
+  /* ══════════════════════════════════════════
+     SCROLL-TO-BOTTOM FAB
+     ══════════════════════════════════════════ */
+  #scroll-fab{
+    position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
+    width:34px;height:34px;border-radius:50%;
+    background:#6366f1;color:#fff;border:none;font-size:16px;
+    cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.4);
+    transition:opacity .2s;z-index:10;display:flex;
+    align-items:center;justify-content:center;
+  }
+  #scroll-fab.hidden{opacity:0;pointer-events:none}
+
+  /* ══════════════════════════════════════════
+     INPUT AREA
+     ══════════════════════════════════════════ */
+  #input-wrapper{flex-shrink:0;padding:0}
   #input-area{
     display:flex;gap:8px;padding:12px;border-top:1px solid rgba(255,255,255,.08);
     background:#13131a;flex-shrink:0;
@@ -112,160 +212,263 @@
   #send-btn:hover:not(:disabled){background:#4f46e5}
   #send-btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
 
-  /* Welcome */
-  .welcome{
-    text-align:center;color:#888;font-size:13px;padding:20px 10px;
-    line-height:1.6;
+  /* ══════════════════════════════════════════
+     FOOTER DISCLAIMER
+     ══════════════════════════════════════════ */
+  #chat-footer{
+    display:none;text-align:center;font-size:11px;color:#666;
+    padding:4px 12px 10px;flex-shrink:0;
   }
-  .welcome strong{color:#a5b4fc}
+
+  /* ══════════════════════════════════════════
+     LIGHT THEME (via ?theme=light)
+     ══════════════════════════════════════════ */
+  .theme-light #chat-window{background:#fafafa;border-color:#e0e0e0}
+  .theme-light #chat-window.fullscreen{background:#fafafa}
+  .theme-light #chat-header{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+  .theme-light #messages{scrollbar-color:#ccc transparent}
+  .theme-light .msg.bot{background:#f0f0f5;color:#1a1a1a;border-color:#e0e0e0}
+  .theme-light .msg.bot strong{color:#4f46e5}
+  .theme-light .msg.bot code{background:#e8e8f0;color:#4f46e5}
+  .theme-light .msg.user{background:#6366f1;color:#fff}
+  .theme-light .msg-time{color:#999}
+  .theme-light .msg-actions button{color:#888}
+  .theme-light .welcome{color:#888}
+  .theme-light .fullscreen-welcome h2{color:#1a1a1a}
+  .theme-light #input-area{background:#fff;border-top-color:#eee}
+  .theme-light #chat-input{background:#fff;color:#1a1a1a;border-color:#ddd}
+  .theme-light #chat-input::placeholder{color:#aaa}
+  .theme-light #chat-footer{color:#999}
+  .theme-light .typing-dots span{background:#6366f1}
 </style>
 </head>
 <body>
 
-<!-- Floating Chat Bubble -->
+<!-- ═══ Floating Chat Bubble ═══ -->
 <button id="chat-bubble" onclick="toggleChat()" aria-label="Open chat">💬</button>
 
-<!-- Chat Window -->
+<!-- ═══ Chat Window ═══ -->
 <div id="chat-window">
+
+  <!-- Header -->
   <div id="chat-header">
     <span>🤖 SoftMania Chat-Bot</span>
-    <div style="display:flex; gap: 12px; align-items:center;">
-      <button id="max-btn" onclick="toggleMaximize()" aria-label="Maximize" title="Maximize">▢</button>
-      <button onclick="toggleChat()" aria-label="Close chat" title="Close chat">✕</button>
+    <div class="header-controls">
+      <button id="max-btn" onclick="toggleFullscreen()" aria-label="Fullscreen" title="Fullscreen">⛶</button>
+      <button onclick="toggleChat()" aria-label="Close chat" title="Close">✕</button>
     </div>
   </div>
+
+  <!-- Messages Area -->
   <div id="messages">
-    <div class="welcome">
+    <!-- Scroll-to-Bottom FAB -->
+    <button id="scroll-fab" class="hidden" onclick="scrollToBottom()">↓</button>
+
+    <!-- Default welcome (floating mode) -->
+    <div class="welcome welcome-default">
       <strong>Welcome!</strong><br>
       Ask me anything about SoftMania's Splunk training, labs, courses, or policies.
     </div>
+
+    <!-- Fullscreen welcome -->
+    <div class="fullscreen-welcome" id="fullscreen-welcome">
+      <h2>What can I help with?</h2>
+    </div>
   </div>
-  <div id="input-area">
-    <input id="chat-input" type="text" placeholder="Type your question…" autocomplete="off">
-    <button id="send-btn" aria-label="Send">➤</button>
+
+  <!-- Input Wrapper -->
+  <div id="input-wrapper">
+    <div id="input-area">
+      <input id="chat-input" type="text" placeholder="Ask anything…" autocomplete="off">
+      <button id="send-btn" aria-label="Send">➤</button>
+    </div>
+  </div>
+
+  <!-- Footer Disclaimer (only shows in fullscreen) -->
+  <div id="chat-footer">
+    SoftMania Chat-Bot can make mistakes. Verify important information.
   </div>
 </div>
 
 <script>
-  // ── Config ──
+  // ══════════════════════════════════════════
+  // CONFIG & STATE
+  // ══════════════════════════════════════════
   const API_BASE = window.location.origin;
-  let isSending = false; // HARD LOCK — prevents ALL duplicate sends
+  let isSending = false;
   let sessionId = localStorage.getItem('softmania_session_id') || null;
+  let sessionToken = localStorage.getItem('softmania_session_token') || null;
+  let historyLoaded = false;
+  let currentTurnIndex = -1; // Track latest turn_index for feedback
 
-  // ── Toggle ──
+  // Theme from URL parameter (?theme=light or ?theme=dark)
+  const urlParams = new URLSearchParams(window.location.search);
+  const theme = urlParams.get('theme') || 'dark';
+  document.body.classList.add(`theme-${theme}`);
+
+  // ══════════════════════════════════════════
+  // TOGGLE CHAT
+  // ══════════════════════════════════════════
   function toggleChat() {
     const win = document.getElementById('chat-window');
     const bubble = document.getElementById('chat-bubble');
     const isOpen = win.classList.toggle('open');
     bubble.classList.toggle('hidden', isOpen);
-    
-    // If closing, ensure we return to normal size
+
     if (!isOpen) {
-      win.classList.remove('maximized');
-      document.getElementById('max-btn').innerText = '▢';
+      win.classList.remove('fullscreen');
+      document.getElementById('max-btn').innerText = '⛶';
     }
-    
-    if (isOpen) document.getElementById('chat-input').focus();
+
+    if (isOpen) {
+      document.getElementById('chat-input').focus();
+      if (!historyLoaded) loadHistory();
+    }
   }
 
-  function toggleMaximize() {
+  // ══════════════════════════════════════════
+  // TOGGLE FULLSCREEN
+  // ══════════════════════════════════════════
+  function toggleFullscreen() {
     const win = document.getElementById('chat-window');
     const btn = document.getElementById('max-btn');
-    const isMax = win.classList.toggle('maximized');
-    btn.innerText = isMax ? '❐' : '▢';
-    btn.title = isMax ? 'Minimize' : 'Maximize';
+    const isFs = win.classList.toggle('fullscreen');
+    btn.innerText = isFs ? '❐' : '⛶';
+    btn.title = isFs ? 'Exit Fullscreen' : 'Fullscreen';
   }
 
-  // ── Markdown → HTML renderer ──
+  // ══════════════════════════════════════════
+  // SAVE / CLEAR SESSION CREDENTIALS
+  // ══════════════════════════════════════════
+  function saveSession(id, token) {
+    sessionId = id;
+    sessionToken = token;
+    localStorage.setItem('softmania_session_id', id);
+    localStorage.setItem('softmania_session_token', token);
+  }
+
+  function clearSession() {
+    sessionId = null;
+    sessionToken = null;
+    localStorage.removeItem('softmania_session_id');
+    localStorage.removeItem('softmania_session_token');
+  }
+
+  // ══════════════════════════════════════════
+  // LOAD HISTORY FROM DB
+  // ══════════════════════════════════════════
+  async function loadHistory() {
+    historyLoaded = true;
+    if (!sessionId || !sessionToken) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/history`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId, token: sessionToken })
+      });
+
+      if (!res.ok) return;
+      const data = await res.json();
+
+      // Update credentials (may have been renewed)
+      saveSession(data.session_id, data.token);
+
+      if (data.expired || !data.history || data.history.length === 0) return;
+
+      // Clear welcome messages and render history
+      clearWelcome();
+      for (const msg of data.history) {
+        const cls = msg.role === 'human' ? 'user' : 'bot';
+        const wrapper = addMessage(msg.content, cls, cls === 'bot');
+        addTimestamp(wrapper, msg.created_at);
+
+        // Add action buttons for assistant messages
+        if (msg.role === 'assistant') {
+          addActionButtons(wrapper, msg.turn_index, msg.feedback);
+          currentTurnIndex = Math.max(currentTurnIndex, msg.turn_index);
+        }
+      }
+      scrollToBottom();
+    } catch (err) {
+      console.error('History load error:', err);
+    }
+  }
+
+  function clearWelcome() {
+    const def = document.querySelector('.welcome-default');
+    const fs = document.getElementById('fullscreen-welcome');
+    if (def) def.style.display = 'none';
+    if (fs) fs.style.display = 'none';
+  }
+
+  // ══════════════════════════════════════════
+  // MARKDOWN → HTML
+  // ══════════════════════════════════════════
   function mdToHtml(text) {
     if (!text) return '';
-
-    // Strip raw citation metadata
     text = text.replace(/\n*Sources?:\s*[\d,\s]+$/i, '');
-    text = text.replace(/\s*\[\^?\d+\^?\]/g, '');          // [1], [^1^], [^2^]
-    text = text.replace(/\s*\[[\d,\s]+\]/g, '');            // [1, 2, 3]
+    text = text.replace(/\s*\[\^?\d+\^?\]/g, '');
+    text = text.replace(/\s*\[[\d,\s]+\]/g, '');
 
     let html = text
-      // Escape HTML entities
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-
-      // Headers
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/^### (.+)$/gm, '<h3>$1</h3>')
       .replace(/^## (.+)$/gm, '<h2>$1</h2>')
       .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-
-      // Bold: **text**
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-
-      // Italic: *text*
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
-
-      // Inline code: `text`
       .replace(/`(.+?)`/g, '<code>$1</code>')
-
-      // Links: [text](url)
       .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
-
-      // Bare URLs → clickable links
       .replace(/(^|[^"'])(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>')
-
-      // Unordered list items: - item or * item
       .replace(/^[\-\*]\s+(.+)$/gm, '<li>$1</li>')
-
-      // Ordered list items: 1. item
       .replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
 
-    // Wrap consecutive <li> in <ul>
     html = html.replace(/((<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
-
-    // Paragraphs: split on double newlines
-    html = html
-      .split(/\n{2,}/)
-      .map(block => {
-        block = block.trim();
-        if (!block) return '';
-        if (/^<(h[1-3]|ul|ol|li|div|p)/.test(block)) return block;
-        return '<p>' + block.replace(/\n/g, '<br>') + '</p>';
-      })
-      .join('');
-
-    // Remaining single newlines → <br>
+    html = html.split(/\n{2,}/).map(block => {
+      block = block.trim();
+      if (!block) return '';
+      if (/^<(h[1-3]|ul|ol|li|div|p)/.test(block)) return block;
+      return '<p>' + block.replace(/\n/g, '<br>') + '</p>';
+    }).join('');
     html = html.replace(/([^>])\n([^<])/g, '$1<br>$2');
-
     return html;
   }
 
-  // ── Send Message (with hard lock) ──
+  // ══════════════════════════════════════════
+  // SEND MESSAGE
+  // ══════════════════════════════════════════
   async function sendMessage() {
-    // ★ HARD LOCK: if already sending, completely ignore this call
     if (isSending) return;
 
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
     if (!text) return;
 
-    // Lock everything IMMEDIATELY before any async work
     isSending = true;
     const btn = document.getElementById('send-btn');
     btn.disabled = true;
     input.disabled = true;
     input.placeholder = 'Waiting for response…';
 
-    addMessage(text, 'user', false);
+    clearWelcome();
+
+    // User message
+    const userWrapper = addMessage(text, 'user', false);
+    addTimestamp(userWrapper, new Date().toISOString());
     input.value = '';
 
-    // Show typing indicator
-    const typingEl = addMessage('Thinking…', 'bot typing', false);
+    // Typing indicator
+    const typingEl = showTyping();
 
     try {
       const res = await fetch(`${API_BASE}/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           question: text,
-          session_id: sessionId
+          session_id: sessionId,
+          token: sessionToken
         })
       });
 
@@ -273,61 +476,186 @@
         const errData = await res.json().catch(() => ({}));
         let errMsg = `Server error ${res.status}`;
         if (errData.detail) {
-          errMsg = Array.isArray(errData.detail) 
-            ? errData.detail.map(e => e.msg).join(', ') 
+          errMsg = Array.isArray(errData.detail)
+            ? errData.detail.map(e => e.msg).join(', ')
             : errData.detail;
         }
         throw new Error(errMsg);
       }
 
       const data = await res.json();
-      
-      // Update persistent session ID
-      if (data.session_id) {
-        sessionId = data.session_id;
-        localStorage.setItem('softmania_session_id', sessionId);
-      }
+
+      // Update persistent session credentials
+      saveSession(data.session_id, data.token);
 
       typingEl.remove();
-      addMessage(data.answer || 'No response.', 'bot', true);
+
+      // Bot response
+      const botWrapper = addMessage(data.answer || 'No response.', 'bot', true);
+      addTimestamp(botWrapper, new Date().toISOString());
+
+      // Determine the turn_index for this new assistant message
+      // It's the previous max + 2 (human gets +0, assistant gets +1, so next pair is +2)
+      currentTurnIndex += 2;
+      addActionButtons(botWrapper, currentTurnIndex, null);
+
     } catch (err) {
-      if (typingEl) typingEl.remove();
+      if (typingEl && typingEl.parentNode) typingEl.remove();
       addMessage('⚠️ ' + (err.message || 'Unknown error occurred'), 'bot', false);
       console.error('Chat Error:', err);
     } finally {
-      // ★ Unlock everything only after response is fully processed
       isSending = false;
       btn.disabled = false;
       input.disabled = false;
-      input.placeholder = 'Type your question…';
+      input.placeholder = 'Ask anything…';
       input.focus();
     }
   }
 
-  // ── Add Message Bubble ──
+  // ══════════════════════════════════════════
+  // ADD MESSAGE BUBBLE
+  // ══════════════════════════════════════════
   function addMessage(text, cls, renderMd) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'msg-wrapper ' + (cls === 'user' ? 'user-side' : 'bot-side');
+
     const el = document.createElement('div');
     el.className = 'msg ' + cls;
-    if (renderMd && cls.startsWith('bot')) {
+    if (renderMd && cls === 'bot') {
       el.innerHTML = mdToHtml(text);
     } else {
       el.textContent = text;
     }
+    wrapper.appendChild(el);
+
     const container = document.getElementById('messages');
-    container.appendChild(el);
-    container.scrollTop = container.scrollHeight;
-    return el;
+    container.appendChild(wrapper);
+    scrollToBottom();
+    return wrapper;
   }
 
-  // ── Enter Key (also blocked by isSending) ──
+  // ══════════════════════════════════════════
+  // TIMESTAMPS
+  // ══════════════════════════════════════════
+  function addTimestamp(wrapperEl, isoDateStr) {
+    if (!isoDateStr) return;
+    const date = new Date(isoDateStr);
+    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    const label = document.createElement('span');
+    label.className = 'msg-time';
+    label.textContent = `${timeStr}, ${dateStr}`;
+    wrapperEl.appendChild(label);
+  }
+
+  // ══════════════════════════════════════════
+  // ACTION BUTTONS (Like / Dislike / Copy)
+  // ══════════════════════════════════════════
+  function addActionButtons(wrapperEl, turnIndex, existingFeedback) {
+    const actions = document.createElement('div');
+    actions.className = 'msg-actions';
+
+    // Like
+    const likeBtn = document.createElement('button');
+    likeBtn.innerHTML = '👍';
+    likeBtn.title = 'Helpful';
+    if (existingFeedback === 'like') likeBtn.classList.add('active-like');
+    likeBtn.onclick = () => sendFeedback(turnIndex, 'like', likeBtn, dislikeBtn);
+
+    // Dislike
+    const dislikeBtn = document.createElement('button');
+    dislikeBtn.innerHTML = '👎';
+    dislikeBtn.title = 'Not helpful';
+    if (existingFeedback === 'dislike') dislikeBtn.classList.add('active-dislike');
+    dislikeBtn.onclick = () => sendFeedback(turnIndex, 'dislike', likeBtn, dislikeBtn);
+
+    // Copy
+    const copyBtn = document.createElement('button');
+    copyBtn.innerHTML = '📋';
+    copyBtn.title = 'Copy';
+    copyBtn.onclick = () => {
+      const msgEl = wrapperEl.querySelector('.msg');
+      navigator.clipboard.writeText(msgEl.textContent || '').then(() => {
+        copyBtn.classList.add('copied');
+        copyBtn.innerHTML = '✅';
+        setTimeout(() => { copyBtn.classList.remove('copied'); copyBtn.innerHTML = '📋'; }, 2000);
+      });
+    };
+
+    actions.appendChild(likeBtn);
+    actions.appendChild(dislikeBtn);
+    actions.appendChild(copyBtn);
+    wrapperEl.appendChild(actions);
+  }
+
+  // ══════════════════════════════════════════
+  // SEND FEEDBACK (Like/Dislike → DB)
+  // ══════════════════════════════════════════
+  async function sendFeedback(turnIndex, feedback, likeBtn, dislikeBtn) {
+    try {
+      const res = await fetch(`${API_BASE}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          token: sessionToken,
+          turn_index: turnIndex,
+          feedback: feedback
+        })
+      });
+
+      if (res.ok) {
+        // Update UI state
+        likeBtn.classList.toggle('active-like', feedback === 'like');
+        dislikeBtn.classList.toggle('active-dislike', feedback === 'dislike');
+      }
+    } catch (err) {
+      console.error('Feedback error:', err);
+    }
+  }
+
+  // ══════════════════════════════════════════
+  // TYPING INDICATOR
+  // ══════════════════════════════════════════
+  function showTyping() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'msg-wrapper bot-side';
+    wrapper.id = 'typing-indicator';
+
+    const el = document.createElement('div');
+    el.className = 'msg bot';
+    el.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+    wrapper.appendChild(el);
+
+    document.getElementById('messages').appendChild(wrapper);
+    scrollToBottom();
+    return wrapper;
+  }
+
+  // ══════════════════════════════════════════
+  // SCROLL-TO-BOTTOM FAB
+  // ══════════════════════════════════════════
+  function scrollToBottom() {
+    const m = document.getElementById('messages');
+    m.scrollTop = m.scrollHeight;
+  }
+
+  const messagesEl = document.getElementById('messages');
+  messagesEl.addEventListener('scroll', () => {
+    const fab = document.getElementById('scroll-fab');
+    const isNearBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 100;
+    fab.classList.toggle('hidden', isNearBottom);
+  });
+
+  // ══════════════════════════════════════════
+  // KEYBOARD & CLICK HANDLERS
+  // ══════════════════════════════════════════
   document.getElementById('chat-input').addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   });
-
-  // ── Click handler (replaces inline onclick to ensure single binding) ──
   document.getElementById('send-btn').addEventListener('click', sendMessage);
 </script>
 </body>

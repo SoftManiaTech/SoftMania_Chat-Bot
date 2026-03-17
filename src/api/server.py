@@ -1,5 +1,9 @@
 import os
+import re
+import hmac
+import hashlib
 import shutil
+from datetime import datetime, timezone, timedelta
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
@@ -9,11 +13,14 @@ from pydantic import BaseModel
 from src.agent.graph import graph_app
 from src.ingestion.orchestrator import ingest_document
 from src.ingestion.vector_db import (
-    clear_all_vectors, 
-    insert_query_log, 
+    clear_all_vectors,
     get_all_portal_links,
     get_session_history,
-    upsert_session_history
+    ensure_session,
+    append_turn,
+    get_session_record,
+    save_feedback,
+    cleanup_expired_sessions
 )
 from src.ingestion.graph_db import clear_all_graph_data
 from src.api.active_links import router as links_router
@@ -21,9 +28,90 @@ from src.config import Config
 from src.logger import setup_logger
 import uuid
 from fastapi import Request
-from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
+from langchain_core.messages import HumanMessage, AIMessage
 
 logger = setup_logger(__name__)
+
+# UUID v4 format validation regex
+UUID4_REGEX = re.compile(
+    r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+    re.IGNORECASE
+)
+
+# ---------------------------------------------------------
+# HMAC Session Security
+# ---------------------------------------------------------
+
+def generate_hmac_token(session_id: str, ip: str, user_agent: str) -> str:
+    """Generates an HMAC-SHA256 token binding a session to its origin."""
+    secret = Config.SESSION_HMAC_SECRET.encode()
+    message = f"{session_id}:{ip}:{user_agent}".encode()
+    return hmac.new(secret, message, hashlib.sha256).hexdigest()
+
+def verify_hmac_token(token: str, session_id: str, ip: str, user_agent: str) -> bool:
+    """Constant-time comparison to prevent timing attacks."""
+    expected = generate_hmac_token(session_id, ip, user_agent)
+    return hmac.compare_digest(token, expected)
+
+async def validate_or_create_session(
+    session_id: Optional[str],
+    token: Optional[str],
+    request: Request
+) -> tuple:
+    """
+    Validates an existing session or creates a new one.
+    Returns: (valid_session_id, valid_token, is_new_session)
+    """
+    ip = request.client.host if request.client else "unknown"
+    ua = request.headers.get("User-Agent", "unknown")
+
+    # Case 1: No session provided → create new
+    if not session_id or not token:
+        new_id = str(uuid.uuid4())
+        new_token = generate_hmac_token(new_id, ip, ua)
+        await ensure_session(new_id, new_token, ip, ua)
+        logger.info(f"New session created: {new_id}")
+        return (new_id, new_token, True)
+
+    # Case 2: Session provided — validate format
+    if not UUID4_REGEX.match(session_id):
+        logger.warning(f"Invalid session_id format rejected: {session_id[:50]}")
+        new_id = str(uuid.uuid4())
+        new_token = generate_hmac_token(new_id, ip, ua)
+        await ensure_session(new_id, new_token, ip, ua)
+        return (new_id, new_token, True)
+
+    # Case 3: Check if session exists in DB
+    record = await get_session_record(session_id)
+    if not record:
+        logger.warning(f"Session not found in DB: {session_id}")
+        new_id = str(uuid.uuid4())
+        new_token = generate_hmac_token(new_id, ip, ua)
+        await ensure_session(new_id, new_token, ip, ua)
+        return (new_id, new_token, True)
+
+    # Case 4: Verify HMAC token
+    if not hmac.compare_digest(record["hmac_token"], token):
+        logger.warning(f"HMAC mismatch for session: {session_id}")
+        new_id = str(uuid.uuid4())
+        new_token = generate_hmac_token(new_id, ip, ua)
+        await ensure_session(new_id, new_token, ip, ua)
+        return (new_id, new_token, True)
+
+    # Case 5: Check expiry
+    last_active = record["last_active"]
+    expiry_delta = timedelta(hours=Config.SESSION_EXPIRY_HOURS)
+    if datetime.now(timezone.utc) - last_active > expiry_delta:
+        logger.info(f"Session expired: {session_id}")
+        new_id = str(uuid.uuid4())
+        new_token = generate_hmac_token(new_id, ip, ua)
+        await ensure_session(new_id, new_token, ip, ua)
+        return (new_id, new_token, True)
+
+    # Case 6: Valid session — touch last_active
+    await ensure_session(session_id, record["hmac_token"], ip, ua)
+    return (session_id, record["hmac_token"], False)
+
 
 app = FastAPI(title="SoftMania Chat-Bot API")
 
@@ -42,14 +130,36 @@ app.add_middleware(
 # Mount static files (widget.html lives here)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# ---------------------------------------------------------
+# Request / Response Models
+# ---------------------------------------------------------
+
 class QueryRequest(BaseModel):
     question: str
-    session_id: Optional[str] = None  # Optional session identifier from the client
+    session_id: Optional[str] = None
+    token: Optional[str] = None  # HMAC token for session validation
 
 class QueryResponse(BaseModel):
     answer: str
     hop_count: int
-    session_id: str  # Return the session ID to the client for persistence
+    session_id: str
+    token: str  # Return HMAC token to the client
+
+class HistoryRequest(BaseModel):
+    session_id: str
+    token: str
+
+class HistoryResponse(BaseModel):
+    history: List[Dict[str, Any]]
+    session_id: str
+    token: str
+    expired: bool
+
+class FeedbackRequest(BaseModel):
+    session_id: str
+    token: str
+    turn_index: int
+    feedback: str  # "like" or "dislike"
 
 ALLOWED_MIME_TYPES = {
     "text/plain",
@@ -63,7 +173,8 @@ ALLOWED_MIME_TYPES = {
 }
 
 # ── Landing Page with Usage Guide & Embed Code ──
-LANDING_HTML = """<!DOCTYPE html>
+LANDING_HTML = """\
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -104,6 +215,8 @@ LANDING_HTML = """<!DOCTYPE html>
     <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
     <tr><td><span class="badge get">GET</span></td><td><code>/health</code></td><td>Health check</td></tr>
     <tr><td><span class="badge post">POST</span></td><td><code>/query</code></td><td>Interact with the intelligence engine</td></tr>
+    <tr><td><span class="badge post">POST</span></td><td><code>/history</code></td><td>Fetch session conversation history</td></tr>
+    <tr><td><span class="badge post">POST</span></td><td><code>/feedback</code></td><td>Submit like/dislike for a message</td></tr>
     <tr><td><span class="badge post">POST</span></td><td><code>/ingest</code></td><td>Upload a document for ingestion</td></tr>
     <tr><td><span class="badge del">DELETE</span></td><td><code>/clear</code></td><td>Purge all database records</td></tr>
   </table>
@@ -199,38 +312,40 @@ async def ingest_file(file: UploadFile = File(...)):
 @app.post("/query", response_model=QueryResponse)
 async def query_softmania(request_body: QueryRequest, request: Request):
     """
-    Main entry point for queries. Now supports persistent sessions and conversational memory.
+    Main entry point for queries. Uses HMAC session validation,
+    normalized DB tables, and sliding-window conversation memory.
     """
-    session_id = request_body.session_id or str(uuid.uuid4())
-    logger.info(f"--- API REQUEST: /query --- Session: {session_id} | Question: '{request_body.question}'")
-    
-    try:
-        # 1. Fetch metadata for session tracking
-        ip_address = request.client.host
-        device_signature = request.headers.get("User-Agent", "unknown")
+    # Input sanitization — cap query length
+    question = request_body.question.strip()
+    if len(question) > Config.MAX_QUERY_LENGTH:
+        question = question[:Config.MAX_QUERY_LENGTH]
+    if not question:
+        raise HTTPException(status_code=400, detail="Question cannot be empty.")
 
-        # 2. Fetch & Truncate Chat History (Sliding Window of Turns)
-        raw_history = await get_session_history(session_id)
-        
-        # Convert JSON turns to LangChain Message objects
-        chat_history = []
-        for turn in raw_history:
-            if "human" in turn and "ai" in turn:
-                chat_history.append(HumanMessage(content=turn["human"]))
-                chat_history.append(AIMessage(content=turn["ai"]))
-        
-        # Keep only the last N turns
+    try:
+        # 1. Validate or create session (HMAC + expiry check)
+        session_id, token, is_new = await validate_or_create_session(
+            request_body.session_id, request_body.token, request
+        )
+        logger.info(f"--- API REQUEST: /query --- Session: {session_id} (new={is_new}) | Q: '{question[:80]}'")
+
+        # 2. Fetch chat history (normalized rows from query_logs)
         max_turns = int(Config.HISTORY_MAX_TURNS)
-        if len(raw_history) > max_turns:
-            # We keep the raw turns for the sliding window in memory if needed, 
-            # but for the Agent we just slice the message list
-            chat_history = chat_history[-(max_turns * 2):]
+        raw_history = await get_session_history(session_id, max_turns=max_turns)
+
+        # Convert normalized rows to LangChain Message objects
+        chat_history = []
+        for entry in raw_history:
+            if entry["role"] == "human":
+                chat_history.append(HumanMessage(content=entry["content"]))
+            elif entry["role"] == "assistant":
+                chat_history.append(AIMessage(content=entry["content"]))
 
         # 3. Fetch active links from the database to inject into the prompt
         try:
             links_data = await get_all_portal_links()
             formatted_links = "\n".join(
-                f"- **{link['page_type'].title()}** ({link['domain']}): [{link['summary']}]({link['page_url']})" 
+                f"- **{link['page_type'].title()}** ({link['domain']}): [{link['summary']}]({link['page_url']})"
                 for link in links_data
             )
             if not formatted_links:
@@ -241,49 +356,107 @@ async def query_softmania(request_body: QueryRequest, request: Request):
 
         # 4. Invoke LangGraph with full context
         initial_state = {
-            "question": request_body.question, 
-            "hop_count": 0, 
+            "question": question,
+            "hop_count": 0,
             "retrieved_context": [],
             "portal_links": formatted_links,
-            "chat_history": chat_history  # Injected memory
+            "chat_history": chat_history
         }
-        
+
         result = await graph_app.ainvoke(initial_state)
-        
+
         answer = result.get("final_answer", "No answer generated.")
         hop_count = result.get("hop_count", 0)
-        
-        # 5. Update Persistent History in DB (Store as Turn pairs)
-        new_turn = {"human": request_body.question, "ai": answer}
-        
-        # Re-fetch full history to append
-        full_database_history = await get_session_history(session_id)
-        full_database_history.append(new_turn)
-        
-        await upsert_session_history(
-            session_id=session_id,
-            history_json=full_database_history,
-            ip_address=ip_address,
-            device_signature=device_signature
-        )
-        
-        # 6. Global logging (un-deletable table)
-        await insert_query_log(request_body.question, answer, hop_count)
-        
+
+        # 5. Append this turn to query_logs (two rows: human + assistant)
+        await append_turn(session_id, question, answer, hop_count)
+
         logger.info(f"--- API RESPONSE: /query --- Session: {session_id} | Answer complete.")
         return QueryResponse(
             answer=answer,
             hop_count=hop_count,
-            session_id=session_id
+            session_id=session_id,
+            token=token
         )
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"--- API ERROR: /query --- {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.post("/history", response_model=HistoryResponse)
+async def get_chat_history(request_body: HistoryRequest, request: Request):
+    """
+    Fetches conversation history for a validated session.
+    Returns the full history (all turns) for UI rendering.
+    If session is expired/invalid, returns empty history with new credentials.
+    """
+    try:
+        session_id, token, is_new = await validate_or_create_session(
+            request_body.session_id, request_body.token, request
+        )
+
+        if is_new:
+            # Old session was invalid or expired — return empty history
+            return HistoryResponse(
+                history=[],
+                session_id=session_id,
+                token=token,
+                expired=True
+            )
+
+        # Fetch full history for UI rendering (not just the LLM window)
+        history = await get_session_history(session_id)
+
+        return HistoryResponse(
+            history=history,
+            session_id=session_id,
+            token=token,
+            expired=False
+        )
+    except Exception as e:
+        logger.error(f"--- API ERROR: /history --- {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/feedback")
+async def submit_feedback(request_body: FeedbackRequest, request: Request):
+    """
+    Saves a like/dislike rating for a specific bot message.
+    Validates session HMAC before accepting.
+    """
+    # Validate feedback value
+    if request_body.feedback not in ("like", "dislike"):
+        raise HTTPException(status_code=400, detail="Feedback must be 'like' or 'dislike'.")
+
+    try:
+        session_id, token, is_new = await validate_or_create_session(
+            request_body.session_id, request_body.token, request
+        )
+
+        if is_new:
+            raise HTTPException(status_code=403, detail="Session invalid or expired.")
+
+        # Save feedback to query_logs.feedback column
+        result = await save_feedback(session_id, request_body.turn_index, request_body.feedback)
+
+        if result and result.endswith("0"):
+            raise HTTPException(status_code=404, detail="Message not found or not an assistant message.")
+
+        return {"status": "ok", "session_id": session_id, "token": token}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"--- API ERROR: /feedback --- {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.delete("/clear")
 async def clear_database():
     """
-    Completely purges all data from the Vector Database and the 
+    Completely purges all data from the Vector Database and the
     Knowledge Graph, acting as a full reset.
     """
     try:
@@ -292,3 +465,4 @@ async def clear_database():
         return {"status": "success", "message": "All database records have been purged."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+

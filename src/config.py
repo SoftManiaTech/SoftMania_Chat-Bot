@@ -34,7 +34,12 @@ class Config:
     # Retrieval & Reasoning Parameters
     TOP_K_RESULTS = 5
     MAX_HOP_COUNT = 3
-    HISTORY_MAX_TURNS = 5 # Number of previous Q&A turns to remember
+    HISTORY_MAX_TURNS = 1 # Number of previous Q&A turns to remember
+    # Session Management
+    SESSION_EXPIRY_HOURS = int(os.getenv("SESSION_EXPIRY_HOURS", "72"))  # Sessions expire after N hours of inactivity
+    SESSION_HMAC_SECRET = os.getenv("SESSION_HMAC_SECRET", "softmania-default-secret-change-in-production")
+    MAX_QUERY_LENGTH = 2000       # Max characters per user query
+    RATE_LIMIT_PER_MINUTE = 300    # Max queries per session per minute
 
     @classmethod
     def get_neo4j_graph(cls):
