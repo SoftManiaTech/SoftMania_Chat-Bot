@@ -20,7 +20,8 @@ from src.ingestion.vector_db import (
     append_turn,
     get_session_record,
     save_feedback,
-    cleanup_expired_sessions
+    cleanup_expired_sessions,
+    setup_pgvector_tables
 )
 from src.ingestion.graph_db import clear_all_graph_data
 from src.api.active_links import router as links_router
@@ -130,6 +131,13 @@ app.add_middleware(
 # Mount static files (widget.html lives here)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+@app.on_event("startup")
+async def startup_event():
+    """Create DB tables on server boot if they don't exist."""
+    logger.info("Running DB table setup on startup...")
+    await setup_pgvector_tables()
+    logger.info("DB tables ready.")
+
 # ---------------------------------------------------------
 # Request / Response Models
 # ---------------------------------------------------------
@@ -222,44 +230,69 @@ LANDING_HTML = """\
   </table>
 
   <h2>💬 Embeddable Chat Widget</h2>
-  <p>Copy the snippet below to embed the chatbot on any website:</p>
+  <p>Copy the snippet below to embed the chatbot seamlessly on any website:</p>
   <div class="code-block">
     <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('embed-code').textContent)">Copy</button>
-    <code id="embed-code">&lt;iframe
-  src="{BASE_URL}/static/widget.html"
-  width="420" height="580"
-  style="border:none;position:fixed;bottom:0;right:0;z-index:9999;"
-  allow="clipboard-read; clipboard-write"&gt;
-&lt;/iframe&gt;</code>
+    <code id="embed-code">&lt;script&gt;
+  (function(){
+    var i=document.createElement('iframe');
+    i.id="softmania-chat-widget";
+    i.src="{BASE_URL}/static/widget.html";
+    i.style.cssText="border:none;position:fixed;bottom:0;right:0;width:100px;height:100px;z-index:99999;transition:all 0.3s ease;color-scheme:light dark;background:transparent;";
+    i.allow="clipboard-read; clipboard-write";
+    document.body.appendChild(i);
+    window.addEventListener("message", function(e){
+      if(e.data === 'softmania-open') { i.style.width="420px"; i.style.height="580px"; }
+      if(e.data === 'softmania-close') { i.style.width="100px"; i.style.height="100px"; }
+      if(e.data === 'softmania-fullscreen') { i.style.width="100vw"; i.style.height="100vh"; }
+      if(e.data === 'softmania-fullscreen-exit') { i.style.width="420px"; i.style.height="580px"; }
+    });
+  })();
+&lt;/script&gt;</code>
   </div>
 
   <h2>🔍 Live Preview</h2>
   <div class="preview">
+    <!-- Notice we don't resize the generic preview widget, as that simulates a mobile screen embed locally -->
     <iframe src="/static/widget.html" title="Chat Widget Preview"></iframe>
   </div>
 
   <div class="footer">SoftMania Technologies · Intelligence Engine · Powered by LangGraph</div>
 </div>
 
-<!-- Render the actual Chatbot Widget on this Landing Page -->
-<iframe src="{BASE_URL}/static/widget.html"
-        width="420" height="580"
-        style="border:none;position:fixed;bottom:0;right:0;z-index:9999;"
-        allow="clipboard-read; clipboard-write">
-</iframe>
+<!-- Render the actual Chatbot Widget on this Landing Page using the above snippet -->
+<script>
+  (function(){
+    var i=document.createElement('iframe');
+    i.id="softmania-chat-widget";
+    i.src="{BASE_URL}/static/widget.html";
+    i.style.cssText="border:none;position:fixed;bottom:0;right:0;width:100px;height:100px;z-index:99999;transition:all 0.3s ease;color-scheme:light dark;background:transparent;";
+    i.allow="clipboard-read; clipboard-write";
+    document.body.appendChild(i);
+    window.addEventListener("message", function(e){
+      if(e.data === 'softmania-open') { i.style.width="420px"; i.style.height="580px"; }
+      if(e.data === 'softmania-close') { i.style.width="100px"; i.style.height="100px"; }
+      if(e.data === 'softmania-fullscreen') { i.style.width="100vw"; i.style.height="100vh"; }
+      if(e.data === 'softmania-fullscreen-exit') { i.style.width="420px"; i.style.height="580px"; }
+    });
+  })();
+</script>
 
 </body>
 </html>"""
 
 @app.get("/", response_class=HTMLResponse)
-async def landing_page():
+async def landing_page(request: Request):
     """Landing page with usage guide and embeddable widget preview."""
-    # Inject the actual base URL for the embed snippet
+    # Try getting SPACE_HOST first (for Hugging Face Spaces)
     base_url = os.getenv("SPACE_HOST", "")
-    if base_url and not base_url.startswith("http"):
-        base_url = f"https://{base_url}"
-    if not base_url:
-        base_url = "https://rsnarsna-advanced-multi-hop-rag.hf.space"
+    if base_url:
+        if not base_url.startswith("http"):
+            base_url = f"https://{base_url}"
+    else:
+        # Default to the current request URL (for local testing/other hosting)
+        base_url = str(request.base_url).rstrip("/")
+        
     return HTMLResponse(content=LANDING_HTML.replace("{BASE_URL}", base_url))
 
 @app.get("/health")

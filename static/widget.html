@@ -38,10 +38,10 @@
      FULL-SCREEN MODE
      ══════════════════════════════════════════ */
   #chat-window.fullscreen{
-    position:fixed;inset:0;width:100vw;height:100vh;
+    width:100vw;height:100vh;
+    bottom:0;right:0;
     border-radius:0;background:#0f0f13;
     box-shadow:none;border:none;
-    animation:scaleIn .3s ease;
   }
   #chat-window.fullscreen #chat-header{
     max-width:760px;margin:0 auto;width:100%;
@@ -61,20 +61,45 @@
   }
   #chat-window.fullscreen #chat-footer{display:block}
 
-  /* Responsive — Tablet */
+  /* Ensure dark fullscreen styles take precedence when not using the light theme */
+  body:not(.theme-light) #chat-window.fullscreen #chat-header{
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    color:#fff;
+  }
+  body:not(.theme-light) #chat-window.fullscreen #input-area{
+    background:#1a1a25;border:1px solid rgba(255,255,255,.12);
+  }
+  body:not(.theme-light) #chat-window.fullscreen #chat-input{
+    background:#1a1a25;color:#e2e2f0;border:1px solid rgba(255,255,255,.1);
+  }
+  body:not(.theme-light) #chat-window.fullscreen #chat-input::placeholder{color:#555}
+
+  /* Light-theme overrides for fullscreen to beat fullscreen-specific dark rules */
+  .theme-light #chat-window.fullscreen #chat-header{
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    color:#1a1a1a;
+  }
+  .theme-light #chat-window.fullscreen #input-area{
+    background:#fff;border:1px solid #eee;
+  }
+  .theme-light #chat-window.fullscreen #chat-input{
+    background:#fff;color:#1a1a1a;border:1px solid #ddd;
+  }
+  .theme-light #chat-window.fullscreen #chat-input::placeholder{color:#aaa}
+
+  /* Responsive — Tablet (768–1024px) */
   @media(max-width:1024px){
     #chat-window.fullscreen #messages,
     #chat-window.fullscreen #input-wrapper,
     #chat-window.fullscreen #chat-header{max-width:90%}
   }
-  /* Responsive — Mobile */
-  @media(max-width:768px){
+  /* Responsive — Mobile (<768px) */
+  @media(max-width:767px){
     #chat-window.fullscreen #messages,
     #chat-window.fullscreen #input-wrapper,
-    #chat-window.fullscreen #chat-header{max-width:100%;padding-left:12px;padding-right:12px}
+    #chat-window.fullscreen #chat-header{max-width:100%;padding-left:0;padding-right:0}
+    #chat-window.fullscreen #input-area{border-radius:0;border-left:none;border-right:none;border-bottom:none}
   }
-
-  @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
 
   /* ══════════════════════════════════════════
      HEADER
@@ -254,6 +279,7 @@
   <div id="chat-header">
     <span>🤖 SoftMania Chat-Bot</span>
     <div class="header-controls">
+      <button id="theme-btn" onclick="toggleTheme()" aria-label="Toggle Theme" title="Toggle Theme">☀️</button>
       <button id="max-btn" onclick="toggleFullscreen()" aria-label="Fullscreen" title="Fullscreen">⛶</button>
       <button onclick="toggleChat()" aria-label="Close chat" title="Close">✕</button>
     </div>
@@ -301,10 +327,28 @@
   let historyLoaded = false;
   let currentTurnIndex = -1; // Track latest turn_index for feedback
 
-  // Theme from URL parameter (?theme=light or ?theme=dark)
+  // Theme Handling (URL -> LocalStorage -> System Config)
   const urlParams = new URLSearchParams(window.location.search);
-  const theme = urlParams.get('theme') || 'dark';
-  document.body.classList.add(`theme-${theme}`);
+  const urlTheme = urlParams.get('theme');
+  const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+  let currentTheme = urlTheme || localStorage.getItem('softmania_theme') || (systemPrefersLight ? 'light' : 'dark');
+
+  // Apply initial theme
+  if (currentTheme === 'light') document.body.classList.add('theme-light');
+  document.getElementById('theme-btn').innerText = currentTheme === 'light' ? '🌙' : '☀️';
+
+  function toggleTheme() {
+    if (currentTheme === 'light') {
+      currentTheme = 'dark';
+      document.body.classList.remove('theme-light');
+      document.getElementById('theme-btn').innerText = '☀️';
+    } else {
+      currentTheme = 'light';
+      document.body.classList.add('theme-light');
+      document.getElementById('theme-btn').innerText = '🌙';
+    }
+    localStorage.setItem('softmania_theme', currentTheme);
+  }
 
   // ══════════════════════════════════════════
   // TOGGLE CHAT
@@ -318,9 +362,9 @@
     if (!isOpen) {
       win.classList.remove('fullscreen');
       document.getElementById('max-btn').innerText = '⛶';
-    }
-
-    if (isOpen) {
+      window.parent.postMessage('softmania-close', '*');
+    } else {
+      window.parent.postMessage('softmania-open', '*');
       document.getElementById('chat-input').focus();
       if (!historyLoaded) loadHistory();
     }
@@ -335,6 +379,9 @@
     const isFs = win.classList.toggle('fullscreen');
     btn.innerText = isFs ? '❐' : '⛶';
     btn.title = isFs ? 'Exit Fullscreen' : 'Fullscreen';
+    
+    // Notify parent to resize iframe if embedded
+    window.parent.postMessage(isFs ? 'softmania-fullscreen' : 'softmania-fullscreen-exit', '*');
   }
 
   // ══════════════════════════════════════════
