@@ -44,7 +44,10 @@ async def router_node(state: AgentState) -> Dict[str, Any]:
     chain = ROUTER_PROMPT | llm.with_structured_output(RouteDecision)
     
     try:
-        decision = await chain.ainvoke({"question": state["question"]})
+        decision = await chain.ainvoke({
+            "question": state["question"],
+            "chat_history": state.get("chat_history", [])
+        })
         route = decision.route_type.lower().strip()
     except Exception as e:
         logger.warning(f"   -> Router failed ({e}), defaulting to 'simple'")
@@ -120,7 +123,8 @@ async def synthesizer_node(state: AgentState) -> Dict[str, Any]:
         result = await chain.ainvoke({
             "question": state["question"], 
             "context": context_str,
-            "portal_links": state.get("portal_links", "No links available.")
+            "portal_links": state.get("portal_links", "No links available."),
+            "chat_history": state.get("chat_history", [])
         })
         if not result:
             raise ValueError("LLM returned empty structured output.")

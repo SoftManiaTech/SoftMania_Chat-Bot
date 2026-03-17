@@ -64,6 +64,9 @@ async def setup_pgvector_tables():
         
         # Create Portal Links table for CRUD API
         await setup_portal_links_table(conn)
+        
+        # Create Chat Sessions table for memory
+        await setup_chat_sessions_table(conn)
 
 async def batch_insert_chunks(doc_id: str, chunks: List[Dict[str, Any]]):
     """
@@ -159,6 +162,7 @@ async def get_all_portal_links() -> List[Dict[str, Any]]:
     async with pool.acquire() as conn:
         rows = await conn.fetch("SELECT id, page_url, domain, page_type, summary FROM portal_links ORDER BY id ASC")
         return [dict(row) for row in rows]
+    return []
 
 async def update_portal_link(link_id: int, page_url: str, domain: str, page_type: str, summary: str):
     """Updates an existing portal link by ID."""
@@ -180,3 +184,36 @@ async def delete_portal_link(link_id: int):
         # result typically looks like "DELETE 1" or "DELETE 0"
         return result.endswith("1")
 
+
+async def setup_chat_sessions_table(conn):
+    """Creates the chat_sessions table for conversational memory."""
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS chat_sessions (
+            session_id TEXT PRIMARY KEY,
+            ip_address TEXT,
+            device_signature TEXT,
+            history JSONB DEFAULT '[]'::jsonb,
+            last_active TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+
+async def upsert_session_history(session_id: str, history_json: List[Dict[str, Any]], ip_address: str = None, device_signature: str = None):
+    """Updates or creates a chat session history."""
+    pool = await Config.get_pg_pool()
+    async with pool.acquire() as conn:
+        await conn.execute("""
+            INSERT INTO chat_sessions (session_id, ip_address, device_signature, history, last_active)
+            VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+            ON CONFLICT (session_id) DO UPDATE 
+            SET history = $4, last_active = CURRENT_TIMESTAMP, ip_address = COALESCE($2, chat_sessions.ip_address);
+        """, session_id, ip_address, device_signature, json.dumps(history_json))
+
+async def get_session_history(session_id: str) -> List[Dict[str, Any]]:
+    """Retrieves the history for a given session."""
+    pool = await Config.get_pg_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow("SELECT history FROM chat_sessions WHERE session_id = $1", session_id)
+        if row and row['history']:
+            return json.loads(row['history'])
+        return []
+    return []

@@ -28,6 +28,21 @@
     border:1px solid rgba(255,255,255,.08);overflow:hidden;
   }
   #chat-window.open{display:flex}
+  #chat-window.maximized {
+    width: 70%;
+    height: 80%;
+    bottom: 24px;
+    right: 24px;
+    border-radius: 20px;
+  }
+  @media (max-width: 768px) {
+    #chat-window.maximized {
+      width: 95%;
+      height: 90%;
+      bottom: 10px;
+      right: 10px;
+    }
+  }
 
   /* Header */
   #chat-header{
@@ -114,7 +129,10 @@
 <div id="chat-window">
   <div id="chat-header">
     <span>🤖 SoftMania Chat-Bot</span>
-    <button onclick="toggleChat()" aria-label="Close chat">✕</button>
+    <div style="display:flex; gap: 12px; align-items:center;">
+      <button id="max-btn" onclick="toggleMaximize()" aria-label="Maximize" title="Maximize">▢</button>
+      <button onclick="toggleChat()" aria-label="Close chat" title="Close chat">✕</button>
+    </div>
   </div>
   <div id="messages">
     <div class="welcome">
@@ -132,6 +150,7 @@
   // ── Config ──
   const API_BASE = window.location.origin;
   let isSending = false; // HARD LOCK — prevents ALL duplicate sends
+  let sessionId = localStorage.getItem('softmania_session_id') || null;
 
   // ── Toggle ──
   function toggleChat() {
@@ -139,7 +158,22 @@
     const bubble = document.getElementById('chat-bubble');
     const isOpen = win.classList.toggle('open');
     bubble.classList.toggle('hidden', isOpen);
+    
+    // If closing, ensure we return to normal size
+    if (!isOpen) {
+      win.classList.remove('maximized');
+      document.getElementById('max-btn').innerText = '▢';
+    }
+    
     if (isOpen) document.getElementById('chat-input').focus();
+  }
+
+  function toggleMaximize() {
+    const win = document.getElementById('chat-window');
+    const btn = document.getElementById('max-btn');
+    const isMax = win.classList.toggle('maximized');
+    btn.innerText = isMax ? '❐' : '▢';
+    btn.title = isMax ? 'Minimize' : 'Maximize';
   }
 
   // ── Markdown → HTML renderer ──
@@ -229,20 +263,37 @@
       const res = await fetch(`${API_BASE}/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: text })
+        body: JSON.stringify({ 
+          question: text,
+          session_id: sessionId
+        })
       });
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.detail || `Server error ${res.status}`);
+        let errMsg = `Server error ${res.status}`;
+        if (errData.detail) {
+          errMsg = Array.isArray(errData.detail) 
+            ? errData.detail.map(e => e.msg).join(', ') 
+            : errData.detail;
+        }
+        throw new Error(errMsg);
       }
 
       const data = await res.json();
+      
+      // Update persistent session ID
+      if (data.session_id) {
+        sessionId = data.session_id;
+        localStorage.setItem('softmania_session_id', sessionId);
+      }
+
       typingEl.remove();
       addMessage(data.answer || 'No response.', 'bot', true);
     } catch (err) {
-      typingEl.remove();
-      addMessage('⚠️ ' + err.message, 'bot', false);
+      if (typingEl) typingEl.remove();
+      addMessage('⚠️ ' + (err.message || 'Unknown error occurred'), 'bot', false);
+      console.error('Chat Error:', err);
     } finally {
       // ★ Unlock everything only after response is fully processed
       isSending = false;

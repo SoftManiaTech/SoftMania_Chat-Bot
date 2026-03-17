@@ -34,6 +34,7 @@ class Config:
     # Retrieval & Reasoning Parameters
     TOP_K_RESULTS = 5
     MAX_HOP_COUNT = 3
+    HISTORY_MAX_TURNS = 5 # Number of previous Q&A turns to remember
 
     @classmethod
     def get_neo4j_graph(cls):

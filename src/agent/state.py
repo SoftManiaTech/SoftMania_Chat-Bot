@@ -1,5 +1,5 @@
 import operator
-from typing import Annotated, TypedDict, List
+from typing import Annotated, TypedDict, List, Any
 
 class AgentState(TypedDict):
     """
@@ -14,4 +14,6 @@ class AgentState(TypedDict):
     compressed_context: str
     hop_count: int
     is_sufficient: bool       # Merged evaluator flag (set by synthesizer)
+    portal_links: str         # Dynamic link collection injected at runtime
+    chat_history: List[Any]   # List of LangChain BaseMessage (Human/AI pairs)
     final_answer: str

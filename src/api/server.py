@@ -4,13 +4,24 @@ from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from src.agent.graph import graph_app
 from src.ingestion.orchestrator import ingest_document
-from src.ingestion.vector_db import clear_all_vectors, insert_query_log, get_all_portal_links
+from src.ingestion.vector_db import (
+    clear_all_vectors, 
+    insert_query_log, 
+    get_all_portal_links,
+    get_session_history,
+    upsert_session_history
+)
 from src.ingestion.graph_db import clear_all_graph_data
 from src.api.active_links import router as links_router
+from src.config import Config
 from src.logger import setup_logger
+import uuid
+from fastapi import Request
+from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 
 logger = setup_logger(__name__)
 
@@ -33,10 +44,12 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 class QueryRequest(BaseModel):
     question: str
+    session_id: Optional[str] = None  # Optional session identifier from the client
 
 class QueryResponse(BaseModel):
     answer: str
     hop_count: int
+    session_id: str  # Return the session ID to the client for persistence
 
 ALLOWED_MIME_TYPES = {
     "text/plain",
@@ -184,10 +197,36 @@ async def ingest_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/query", response_model=QueryResponse)
-async def query_softmania(request: QueryRequest):
-    logger.info(f"--- API REQUEST: /query --- Question: '{request.question}'")
+async def query_softmania(request_body: QueryRequest, request: Request):
+    """
+    Main entry point for queries. Now supports persistent sessions and conversational memory.
+    """
+    session_id = request_body.session_id or str(uuid.uuid4())
+    logger.info(f"--- API REQUEST: /query --- Session: {session_id} | Question: '{request_body.question}'")
+    
     try:
-        # Fetch active links from the database to inject into the prompt
+        # 1. Fetch metadata for session tracking
+        ip_address = request.client.host
+        device_signature = request.headers.get("User-Agent", "unknown")
+
+        # 2. Fetch & Truncate Chat History (Sliding Window of Turns)
+        raw_history = await get_session_history(session_id)
+        
+        # Convert JSON turns to LangChain Message objects
+        chat_history = []
+        for turn in raw_history:
+            if "human" in turn and "ai" in turn:
+                chat_history.append(HumanMessage(content=turn["human"]))
+                chat_history.append(AIMessage(content=turn["ai"]))
+        
+        # Keep only the last N turns
+        max_turns = int(Config.HISTORY_MAX_TURNS)
+        if len(raw_history) > max_turns:
+            # We keep the raw turns for the sliding window in memory if needed, 
+            # but for the Agent we just slice the message list
+            chat_history = chat_history[-(max_turns * 2):]
+
+        # 3. Fetch active links from the database to inject into the prompt
         try:
             links_data = await get_all_portal_links()
             formatted_links = "\n".join(
@@ -200,27 +239,42 @@ async def query_softmania(request: QueryRequest):
             logger.warning(f"Failed to fetch portal links for injection: {e}")
             formatted_links = "Error fetching links."
 
-        # We start the LangGraph with the question and the fetched links
+        # 4. Invoke LangGraph with full context
         initial_state = {
-            "question": request.question, 
+            "question": request_body.question, 
             "hop_count": 0, 
             "retrieved_context": [],
-            "portal_links": formatted_links  # Injected directly into state
+            "portal_links": formatted_links,
+            "chat_history": chat_history  # Injected memory
         }
         
-        # We use ainvoke for asynchronous execution of the graph
         result = await graph_app.ainvoke(initial_state)
         
         answer = result.get("final_answer", "No answer generated.")
         hop_count = result.get("hop_count", 0)
         
-        # Log the request/response pair into the un-deletable table
-        await insert_query_log(request.question, answer, hop_count)
+        # 5. Update Persistent History in DB (Store as Turn pairs)
+        new_turn = {"human": request_body.question, "ai": answer}
         
-        logger.info(f"--- API RESPONSE: /query --- Generated answer in {hop_count} hops.")
+        # Re-fetch full history to append
+        full_database_history = await get_session_history(session_id)
+        full_database_history.append(new_turn)
+        
+        await upsert_session_history(
+            session_id=session_id,
+            history_json=full_database_history,
+            ip_address=ip_address,
+            device_signature=device_signature
+        )
+        
+        # 6. Global logging (un-deletable table)
+        await insert_query_log(request_body.question, answer, hop_count)
+        
+        logger.info(f"--- API RESPONSE: /query --- Session: {session_id} | Answer complete.")
         return QueryResponse(
             answer=answer,
-            hop_count=hop_count
+            hop_count=hop_count,
+            session_id=session_id
         )
     except Exception as e:
         logger.error(f"--- API ERROR: /query --- {e}")
