@@ -356,12 +356,10 @@ async def query_softmania(request_body: QueryRequest, request: Request, response
     """
     # Input sanitization — cap query length
     question = request_body.question.strip()
-    if len(question) > Config.MAX_QUERY_LENGTH:
-        question = question[:Config.MAX_QUERY_LENGTH]
-    else:
-        raise HTTPException(status_code=400, detail=f"Question exceeds maximum length of {Config.MAX_QUERY_LENGTH} characters.")   
     if not question:
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
+    if len(question) > Config.MAX_QUERY_LENGTH:
+        raise HTTPException(status_code=400, detail=f"Question exceeds maximum length of {Config.MAX_QUERY_LENGTH} characters.")
 
     try:
         # 1. Validate or create session (HMAC + expiry check)
