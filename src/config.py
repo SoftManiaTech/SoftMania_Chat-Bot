@@ -21,6 +21,24 @@ class Config:
     _neo4j_graph = None
     _pg_pool = None
     
+    # ---------------------------------------------------------
+    # Server & Networking
+    # ---------------------------------------------------------
+    PORT = int(os.getenv("PORT", 7860))
+    HOST = os.getenv("HOST", "0.0.0.0")
+    SPACE_HOST = os.getenv("SPACE_HOST", "")
+    
+    # ---------------------------------------------------------
+    # Hugging Face Settings
+    # ---------------------------------------------------------
+    HF_HOME = os.getenv("HF_HOME", os.path.abspath("./.cache/huggingface"))
+    LOCAL_EMBEDDING_MODEL = os.getenv("LOCAL_EMBEDDING_MODEL", "true").lower() != "false"
+    
+    # ---------------------------------------------------------
+    # Cookie & Security
+    # ---------------------------------------------------------
+    SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "0") == "1"
+    
     # Central LLM Configurations
     PRIMARY_LLM_MODEL = "mistral-large-latest"         # Used by ingestion (extraction)
     FAST_LLM_MODEL = "open-mistral-nemo"               # Used by agent (router, decomposer, compressor, synthesizer)
@@ -34,7 +52,7 @@ class Config:
     # Retrieval & Reasoning Parameters
     TOP_K_RESULTS = 5
     MAX_HOP_COUNT = 3
-    HISTORY_MAX_TURNS = 1 # Number of previous Q&A turns to remember
+    HISTORY_MAX_TURNS = 0 # Number of previous Q&A turns to remember
     # Session Management
     SESSION_EXPIRY_HOURS = int(os.getenv("SESSION_EXPIRY_HOURS", "72"))  # Sessions expire after N hours of inactivity
     SESSION_HMAC_SECRET = os.getenv("SESSION_HMAC_SECRET", "softmania-default-secret-change-in-production")

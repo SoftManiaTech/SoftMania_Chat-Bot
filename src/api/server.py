@@ -28,7 +28,7 @@ from src.api.active_links import router as links_router
 from src.config import Config
 from src.logger import setup_logger
 import uuid
-from fastapi import Request
+from fastapi import Request, Response
 from langchain_core.messages import HumanMessage, AIMessage
 
 logger = setup_logger(__name__)
@@ -154,8 +154,8 @@ class QueryResponse(BaseModel):
     token: str  # Return HMAC token to the client
 
 class HistoryRequest(BaseModel):
-    session_id: str
-    token: str
+    session_id: Optional[str] = None
+    token: Optional[str] = None
 
 class HistoryResponse(BaseModel):
     history: List[Dict[str, Any]]
@@ -164,8 +164,8 @@ class HistoryResponse(BaseModel):
     expired: bool
 
 class FeedbackRequest(BaseModel):
-    session_id: str
-    token: str
+    session_id: Optional[str] = None
+    token: Optional[str] = None
     turn_index: int
     feedback: str  # "like" or "dislike"
 
@@ -285,7 +285,7 @@ LANDING_HTML = """\
 async def landing_page(request: Request):
     """Landing page with usage guide and embeddable widget preview."""
     # Try getting SPACE_HOST first (for Hugging Face Spaces)
-    base_url = os.getenv("SPACE_HOST", "")
+    base_url = Config.SPACE_HOST
     if base_url:
         if not base_url.startswith("http"):
             base_url = f"https://{base_url}"
@@ -313,6 +313,12 @@ async def ingest_file(file: UploadFile = File(...)):
         raise HTTPException(
             status_code=415, 
             detail=f"Unsupported Media Type: {file.content_type}. Please upload text, pdf, html, csv, or docx."
+        )
+        
+    if not Config.LOCAL_EMBEDDING_MODEL:
+        raise HTTPException(
+            status_code=503, 
+            detail="Ingestion disabled: LOCAL_EMBEDDING_MODEL is false. Ingestion exclusively requires local embedding models."
         )
         
     logger.info(f"--- API REQUEST: /ingest --- Received file: {file.filename}")
@@ -343,7 +349,7 @@ async def ingest_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/query", response_model=QueryResponse)
-async def query_softmania(request_body: QueryRequest, request: Request):
+async def query_softmania(request_body: QueryRequest, request: Request, response: Response):
     """
     Main entry point for queries. Uses HMAC session validation,
     normalized DB tables, and sliding-window conversation memory.
@@ -352,27 +358,46 @@ async def query_softmania(request_body: QueryRequest, request: Request):
     question = request_body.question.strip()
     if len(question) > Config.MAX_QUERY_LENGTH:
         question = question[:Config.MAX_QUERY_LENGTH]
+    else:
+        raise HTTPException(status_code=400, detail=f"Question exceeds maximum length of {Config.MAX_QUERY_LENGTH} characters.")   
     if not question:
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
 
     try:
         # 1. Validate or create session (HMAC + expiry check)
+        session_id_in = request_body.session_id or request.cookies.get("session_id")
+        token_in = request_body.token or request.cookies.get("session_token")
         session_id, token, is_new = await validate_or_create_session(
-            request_body.session_id, request_body.token, request
+            session_id_in, token_in, request
         )
+        
+        if is_new:
+            response.set_cookie(key="session_id", value=session_id, httponly=True, secure=Config.SESSION_COOKIE_SECURE, samesite="lax")
+            response.set_cookie(key="session_token", value=token, httponly=True, secure=Config.SESSION_COOKIE_SECURE, samesite="lax")
+            
         logger.info(f"--- API REQUEST: /query --- Session: {session_id} (new={is_new}) | Q: '{question[:80]}'")
 
         # 2. Fetch chat history (normalized rows from query_logs)
-        max_turns = int(Config.HISTORY_MAX_TURNS)
-        raw_history = await get_session_history(session_id, max_turns=max_turns)
-
-        # Convert normalized rows to LangChain Message objects
+        # If HISTORY_MAX_TURNS is 0 or less, skip history retrieval to avoid
+        # unnecessary DB calls and keep the chat context empty.
         chat_history = []
-        for entry in raw_history:
-            if entry["role"] == "human":
-                chat_history.append(HumanMessage(content=entry["content"]))
-            elif entry["role"] == "assistant":
-                chat_history.append(AIMessage(content=entry["content"]))
+        try:
+            if int(Config.HISTORY_MAX_TURNS) > 0:
+                max_turns = int(Config.HISTORY_MAX_TURNS)
+                raw_history = await get_session_history(session_id, max_turns=max_turns)
+
+                # Convert normalized rows to LangChain Message objects
+                for entry in raw_history:
+                    if entry["role"] == "human":
+                        chat_history.append(HumanMessage(content=entry["content"]))
+                    elif entry["role"] == "assistant":
+                        chat_history.append(AIMessage(content=entry["content"]))
+            else:
+                # No history retention configured; leave chat_history empty
+                pass
+        except Exception as e:
+            logger.warning(f"Failed to fetch/parse session history: {e}")
+            chat_history = []
 
         # 3. Fetch active links from the database to inject into the prompt
         try:
@@ -420,18 +445,22 @@ async def query_softmania(request_body: QueryRequest, request: Request):
 
 
 @app.post("/history", response_model=HistoryResponse)
-async def get_chat_history(request_body: HistoryRequest, request: Request):
+async def get_chat_history(request_body: HistoryRequest, request: Request, response: Response):
     """
     Fetches conversation history for a validated session.
     Returns the full history (all turns) for UI rendering.
     If session is expired/invalid, returns empty history with new credentials.
     """
     try:
+        session_id_in = request_body.session_id or request.cookies.get("session_id")
+        token_in = request_body.token or request.cookies.get("session_token")
         session_id, token, is_new = await validate_or_create_session(
-            request_body.session_id, request_body.token, request
+            session_id_in, token_in, request
         )
 
         if is_new:
+            response.set_cookie(key="session_id", value=session_id, httponly=True, secure=Config.SESSION_COOKIE_SECURE, samesite="lax")
+            response.set_cookie(key="session_token", value=token, httponly=True, secure=Config.SESSION_COOKIE_SECURE, samesite="lax")
             # Old session was invalid or expired — return empty history
             return HistoryResponse(
                 history=[],
@@ -455,7 +484,7 @@ async def get_chat_history(request_body: HistoryRequest, request: Request):
 
 
 @app.post("/feedback")
-async def submit_feedback(request_body: FeedbackRequest, request: Request):
+async def submit_feedback(request_body: FeedbackRequest, request: Request, response: Response):
     """
     Saves a like/dislike rating for a specific bot message.
     Validates session HMAC before accepting.
@@ -465,11 +494,15 @@ async def submit_feedback(request_body: FeedbackRequest, request: Request):
         raise HTTPException(status_code=400, detail="Feedback must be 'like' or 'dislike'.")
 
     try:
+        session_id_in = request_body.session_id or request.cookies.get("session_id")
+        token_in = request_body.token or request.cookies.get("session_token")
         session_id, token, is_new = await validate_or_create_session(
-            request_body.session_id, request_body.token, request
+            session_id_in, token_in, request
         )
 
         if is_new:
+            response.set_cookie(key="session_id", value=session_id, httponly=True, secure=Config.SESSION_COOKIE_SECURE, samesite="lax")
+            response.set_cookie(key="session_token", value=token, httponly=True, secure=Config.SESSION_COOKIE_SECURE, samesite="lax")
             raise HTTPException(status_code=403, detail="Session invalid or expired.")
 
         # Save feedback to query_logs.feedback column

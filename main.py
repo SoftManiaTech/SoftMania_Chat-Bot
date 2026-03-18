@@ -2,6 +2,7 @@ import os
 import uvicorn
 import warnings
 from src.api.server import app
+from src.config import Config
 
 # Suppress annoying Langchain Pydantic V1 deprecation warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="langchain_core")
@@ -40,16 +41,17 @@ def main():
     Runs the FastAPI application using Uvicorn.
     """
     # 1. Force all Hugging Face operations to use our local directory
-    os.environ["HF_HOME"] = os.path.abspath("./.cache/huggingface")
-    os.makedirs(os.environ["HF_HOME"], exist_ok=True)
+    os.environ["HF_HOME"] = Config.HF_HOME
+    os.makedirs(Config.HF_HOME, exist_ok=True)
     
     # 2. Check and Download (Skip if exists)
-    pre_download_models()
+    if Config.LOCAL_EMBEDDING_MODEL:
+        pre_download_models()
     
     # 3. Start Server
     # Hugging Face provides a dynamic PORT OR defaults to 7860
-    port = int(os.environ.get("PORT", 7860))
-    host = os.environ.get("HOST", "0.0.0.0")
+    port = Config.PORT
+    host = Config.HOST
     
     # We pass the application instance string for hot-reloading 
     uvicorn.run("main:app", host=host, port=port, reload=True)
