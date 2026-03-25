@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel, HttpUrl
 from typing import List, Optional
 from src.ingestion.vector_db import (
@@ -7,9 +7,18 @@ from src.ingestion.vector_db import (
     update_portal_link,
     delete_portal_link
 )
+from src.config import Config
 from src.logger import setup_logger
 
 logger = setup_logger(__name__)
+
+# Admin Auth Dependency (same logic as server.py)
+async def verify_admin(request: Request):
+    admin_key = Config.ADMIN_API_KEY
+    if not admin_key:
+        return
+    if request.headers.get("X-Admin-Key") != admin_key:
+        raise HTTPException(status_code=401, detail="Unauthorized: Invalid admin API key.")
 
 router = APIRouter(prefix="/links", tags=["Link Management"])
 
@@ -43,7 +52,7 @@ async def get_links():
         logger.error(f"Error fetching links: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-@router.post("/", response_model=PortalLinkResponse, status_code=201)
+@router.post("/", response_model=PortalLinkResponse, status_code=201, dependencies=[Depends(verify_admin)])
 async def create_link(link: PortalLinkCreate):
     """Add a new portal link."""
     try:
@@ -59,9 +68,9 @@ async def create_link(link: PortalLinkCreate):
         return result
     except Exception as e:
         logger.error(f"Error creating link: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
-@router.put("/{link_id}", response_model=PortalLinkResponse)
+@router.put("/{link_id}", response_model=PortalLinkResponse, dependencies=[Depends(verify_admin)])
 async def update_link(link_id: int, link: PortalLinkUpdate):
     """Update an existing portal link."""
     try:
@@ -77,9 +86,9 @@ async def update_link(link_id: int, link: PortalLinkUpdate):
         return result
     except Exception as e:
         logger.error(f"Error updating link: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
-@router.delete("/{link_id}", status_code=204)
+@router.delete("/{link_id}", status_code=204, dependencies=[Depends(verify_admin)])
 async def delete_link(link_id: int):
     """Delete a portal link."""
     try:
@@ -89,4 +98,4 @@ async def delete_link(link_id: int):
         return None
     except Exception as e:
         logger.error(f"Error deleting link: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")

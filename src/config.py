@@ -1,6 +1,7 @@
 import os
 import asyncpg
 from dotenv import load_dotenv
+from typing import Optional
 from langchain_neo4j import Neo4jGraph
 
 load_dotenv()
@@ -37,7 +38,15 @@ class Config:
     # ---------------------------------------------------------
     # Cookie & Security
     # ---------------------------------------------------------
-    SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "0") == "1"
+    SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "1") == "1"
+    
+    # ---------------------------------------------------------
+    # WhatsApp Settings
+    # ---------------------------------------------------------
+    WA_PHONE_ID = os.getenv("WA_PHONE_ID", "YOUR_PHONE_ID")
+    WA_TOKEN = os.getenv("WA_TOKEN", "YOUR_PERMANENT_TOKEN")
+    WA_VERIFY_TOKEN = os.getenv("WA_VERIFY_TOKEN", "c7396c9a2023d3c8e135f4d502ae9598")
+    META_APP_SECRET = os.getenv("META_APP_SECRET", "")  # For webhook signature verification
     
     # Central LLM Configurations
     PRIMARY_LLM_MODEL = "mistral-large-latest"         # Used by ingestion (extraction)
@@ -48,16 +57,24 @@ class Config:
     # Ingestion Parameters
     CHUNK_SIZE = 1000
     CHUNK_OVERLAP = 200
+    MAX_UPLOAD_SIZE_MB = int(os.getenv("MAX_UPLOAD_SIZE_MB", "50"))
     
     # Retrieval & Reasoning Parameters
     TOP_K_RESULTS = 5
     MAX_HOP_COUNT = 3
-    HISTORY_MAX_TURNS = 0 # Number of previous Q&A turns to remember
+    HISTORY_MAX_TURNS = int(os.getenv("HISTORY_MAX_TURNS", "0"))  # Number of previous Q&A turns to remember
     # Session Management
     SESSION_EXPIRY_HOURS = int(os.getenv("SESSION_EXPIRY_HOURS", "72"))  # Sessions expire after N hours of inactivity
     SESSION_HMAC_SECRET = os.getenv("SESSION_HMAC_SECRET", "softmania-default-secret-change-in-production")
+    ADMIN_API_KEY = os.getenv("ADMIN_API_KEY", "")  # Protect admin endpoints
     MAX_QUERY_LENGTH = 2000       # Max characters per user query
-    RATE_LIMIT_PER_MINUTE = 300    # Max queries per session per minute
+    # Rate & Concurrency Limits for Production
+    RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "300"))    # Max queries per session per minute
+    WA_RATE_LIMIT = int(os.getenv("WA_RATE_LIMIT", "10"))        # Max WhatsApp messages per phone per window
+    WA_RATE_WINDOW = int(os.getenv("WA_RATE_WINDOW", "60"))      # Rate limit window in seconds
+    LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "3"))     # Stop retrying after N times to prevent Thundering Herd
+    LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT", "15"))            # Hard timeout in seconds for LLM APIs
+    LLM_CONCURRENCY_LIMIT = int(os.getenv("LLM_CONCURRENCY_LIMIT", "10")) # Global semaphore for LLM endpoints
 
     @classmethod
     def get_neo4j_graph(cls):
@@ -94,14 +111,16 @@ class Config:
             await cls._pg_pool.close()
 
     @classmethod
-    def get_llm(cls, temperature: float = None):
+    def get_llm(cls, temperature: Optional[float] = None):
         """Returns the configured LLM instance for extraction and reasoning."""
         from langchain_mistralai import ChatMistralAI
         temp = temperature if temperature is not None else cls.DEFAULT_TEMPERATURE
         return ChatMistralAI(
             model=cls.PRIMARY_LLM_MODEL, 
             temperature=temp, 
-            api_key=MISTRAL_API_KEY
+            api_key=MISTRAL_API_KEY,
+            max_retries=cls.LLM_MAX_RETRIES,
+            timeout=cls.LLM_TIMEOUT
         )
 
     @classmethod
@@ -111,7 +130,9 @@ class Config:
         return ChatMistralAI(
             model=cls.FAST_LLM_MODEL,
             temperature=temperature,
-            api_key=MISTRAL_API_KEY
+            api_key=MISTRAL_API_KEY,
+            max_retries=cls.LLM_MAX_RETRIES,
+            timeout=cls.LLM_TIMEOUT
         )
 
     @classmethod

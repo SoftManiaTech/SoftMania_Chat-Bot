@@ -1,21 +1,16 @@
 import os
 import json
 import asyncio
+from functools import lru_cache
 from typing import Dict, Any, List
 from src.agent.state import AgentState
 from src.ingestion.vector_db import semantic_search
 from src.config import Config
 
-_GRAPH_CACHE = {}
-
-def fetch_graph_traversals(chunk_ids: List[str]) -> List[Dict[str, Any]]:
+@lru_cache(maxsize=512)
+def fetch_graph_traversals(chunk_ids: tuple) -> List[Dict[str, Any]]:
     if not chunk_ids:
         return []
-    
-    # Needs to be hashable for cache key
-    cache_key = tuple(sorted(chunk_ids))
-    if cache_key in _GRAPH_CACHE:
-        return _GRAPH_CACHE[cache_key]
         
     graph = Config.get_neo4j_graph()
     cypher_query = """
@@ -24,8 +19,7 @@ def fetch_graph_traversals(chunk_ids: List[str]) -> List[Dict[str, Any]]:
     RETURN n.id AS source, type(r) AS relation, m.id AS target
     LIMIT 10
     """
-    results = graph.query(cypher_query, params={"chunk_ids": chunk_ids})
-    _GRAPH_CACHE[cache_key] = results
+    results = graph.query(cypher_query, params={"chunk_ids": list(chunk_ids)})
     return results
 
 async def process_sub_query(query: str, embeddings) -> List[str]:
@@ -45,7 +39,7 @@ async def process_sub_query(query: str, embeddings) -> List[str]:
     # 2. Graph Traversal Link with Caching 
     # Run synchronous Neo4j query in a thread pool to avoid blocking async event loop
     if chunk_ids_found:
-        graph_records = await asyncio.to_thread(fetch_graph_traversals, chunk_ids_found)
+        graph_records = await asyncio.to_thread(fetch_graph_traversals, tuple(chunk_ids_found))
         for record in graph_records:
             if record.get("relation"):
                 local_context.append(f"[Graph Result]: {record['source']} -> {record['relation']} -> {record['target']}")

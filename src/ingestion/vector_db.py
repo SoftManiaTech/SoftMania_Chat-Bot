@@ -183,8 +183,13 @@ async def setup_chat_sessions_table(conn):
             ip_address       TEXT,
             device_signature TEXT,
             created_at       TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            last_active      TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            last_active      TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            last_turn_index  INTEGER DEFAULT -1
         );
+    """)
+    # Migration: gracefully add the column to existing tables
+    await conn.execute("""
+        ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS last_turn_index INTEGER DEFAULT -1;
     """)
 
 
@@ -241,19 +246,27 @@ async def ensure_session(session_id: str, hmac_token: str, ip_address: Optional[
 async def append_turn(session_id: str, human_msg: str, ai_msg: str, hop_count: Optional[int] = 0):
     """
     Appends a full conversation turn (human + assistant) as TWO rows
-    in query_logs with sequential turn_index values.
+    in query_logs using an atomic UPDATE on chat_sessions, avoiding SELECT MAX concurrency hotspots.
     """
     pool = await Config.get_pg_pool()
     async with pool.acquire() as conn:
-        # Get the next turn_index for this session
-        row = await conn.fetchrow("""
-            SELECT COALESCE(MAX(turn_index), -1) + 1 AS next_idx
-            FROM query_logs
-            WHERE session_id = $1;
-        """, session_id)
-        next_idx = row["next_idx"] if row else 0
-
         async with conn.transaction():
+            # Atomically increment last_turn_index by 2 and update last_active timestamp
+            row = await conn.fetchrow("""
+                UPDATE chat_sessions
+                SET last_turn_index = last_turn_index + 2,
+                    last_active = CURRENT_TIMESTAMP
+                WHERE session_id = $1
+                RETURNING last_turn_index;
+            """, session_id)
+            
+            if not row:
+                # Fallback if session somehow doesn't exist 
+                raise ValueError(f"Session {session_id} not found when appending turn.")
+
+            current_max = row["last_turn_index"]
+            next_idx = current_max - 1  # Human message is the first of the newly reserved indices
+
             # Human message
             await conn.execute("""
                 INSERT INTO query_logs (session_id, turn_index, role, content, hop_count)
@@ -264,13 +277,9 @@ async def append_turn(session_id: str, human_msg: str, ai_msg: str, hop_count: O
             await conn.execute("""
                 INSERT INTO query_logs (session_id, turn_index, role, content, hop_count)
                 VALUES ($1, $2, 'assistant', $3, $4)
-            """, session_id, next_idx + 1, ai_msg, hop_count)
+            """, session_id, current_max, ai_msg, hop_count)
 
-        # Touch session timestamp
-        await conn.execute("""
-            UPDATE chat_sessions SET last_active = CURRENT_TIMESTAMP
-            WHERE session_id = $1;
-        """, session_id)
+        return current_max
 
 
 async def get_session_history(session_id: str, max_turns: Optional[int] = None) -> List[Dict[str, Any]]:

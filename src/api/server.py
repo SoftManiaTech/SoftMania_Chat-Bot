@@ -3,8 +3,10 @@ import re
 import hmac
 import hashlib
 import shutil
+from contextlib import asynccontextmanager
+from pathlib import PurePosixPath
 from datetime import datetime, timezone, timedelta
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,13 +27,30 @@ from src.ingestion.vector_db import (
 )
 from src.ingestion.graph_db import clear_all_graph_data
 from src.api.active_links import router as links_router
+from src.api.whatsapp_services import router as whatsapp_router
 from src.config import Config
 from src.logger import setup_logger
 import uuid
 from fastapi import Request, Response
 from langchain_core.messages import HumanMessage, AIMessage
+from src.api.chat_engine import generate_agent_response
+import asyncio
 
 logger = setup_logger(__name__)
+
+# Global concurrency limiter to prevent LLM backlogs and DB pool exhaustion
+llm_semaphore = asyncio.Semaphore(Config.LLM_CONCURRENCY_LIMIT)
+
+# Prevent users from queueing multiple requests in the same session (spam filtering)
+in_flight_sessions = set()
+
+# Basic Application Metrics (in-memory)
+app_metrics = {
+    "total_queries": 0,
+    "429_fast_fails": 0,
+    "llm_errors": 0,
+    "successful_queries": 0
+}
 
 # UUID v4 format validation regex
 UUID4_REGEX = re.compile(
@@ -113,16 +132,44 @@ async def validate_or_create_session(
     await ensure_session(session_id, record["hmac_token"], ip, ua)
     return (session_id, record["hmac_token"], False)
 
+# ---------------------------------------------------------
+# Admin Auth Dependency
+# ---------------------------------------------------------
 
-app = FastAPI(title="SoftMania Chat-Bot API")
+async def verify_admin(request: Request):
+    """Validates admin API key for protected endpoints."""
+    admin_key = Config.ADMIN_API_KEY
+    if not admin_key:
+        return  # No key configured = open access (dev mode)
+    if request.headers.get("X-Admin-Key") != admin_key:
+        raise HTTPException(status_code=401, detail="Unauthorized: Invalid admin API key.")
+
+# ---------------------------------------------------------
+# App Lifespan (replaces deprecated on_event)
+# ---------------------------------------------------------
+
+@asynccontextmanager
+async def lifespan(app):
+    """Create DB tables on server boot if they don't exist."""
+    logger.info("Running DB table setup on startup...")
+    await setup_pgvector_tables()
+    logger.info("DB tables ready.")
+    yield
+    await Config.close_all()
+
+app = FastAPI(title="SoftMania Chat-Bot API", lifespan=lifespan)
 
 # Include the new Link Management router
 app.include_router(links_router)
 
-# CORS — allow iframe embedding and cross-origin requests from any domain
+# Mount the WhatsApp Webhook router
+app.include_router(whatsapp_router)
+
+# CORS — whitelist trusted origins only (Fix #1)
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -130,13 +177,6 @@ app.add_middleware(
 
 # Mount static files (widget.html lives here)
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
-@app.on_event("startup")
-async def startup_event():
-    """Create DB tables on server boot if they don't exist."""
-    logger.info("Running DB table setup on startup...")
-    await setup_pgvector_tables()
-    logger.info("DB tables ready.")
 
 # ---------------------------------------------------------
 # Request / Response Models
@@ -300,11 +340,16 @@ async def health_check():
     """Health check endpoint for container probes."""
     return {"status": "healthy", "service": "SoftMania Chat-Bot API"}
 
-@app.post("/ingest")
+@app.get("/metrics/basic")
+async def basic_metrics():
+    """Exposes basic internal counters for real-time monitoring."""
+    return app_metrics
+
+@app.post("/ingest", dependencies=[Depends(verify_admin)])
 async def ingest_file(file: UploadFile = File(...)):
     """
     API endpoint to upload a document, chunk it, extract Knowledge Graph entities,
-    and save them into PGVector and Neo4j.
+    and save them into PGVector and Neo4j. Protected by admin API key.
     """
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
@@ -314,11 +359,18 @@ async def ingest_file(file: UploadFile = File(...)):
             status_code=415, 
             detail=f"Unsupported Media Type: {file.content_type}. Please upload text, pdf, html, csv, or docx."
         )
+    
+    # Fix #14: Enforce file size limit
+    max_bytes = Config.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+    contents = await file.read()
+    if len(contents) > max_bytes:
+        raise HTTPException(status_code=413, detail=f"File exceeds maximum size of {Config.MAX_UPLOAD_SIZE_MB}MB.")
+    await file.seek(0)
         
     if not Config.LOCAL_EMBEDDING_MODEL:
         raise HTTPException(
             status_code=503, 
-            detail="Ingestion disabled: LOCAL_EMBEDDING_MODEL is false. Ingestion exclusively requires local embedding models."
+            detail="Ingestion disabled: LOCAL_EMBEDDING_MODEL is false."
         )
         
     logger.info(f"--- API REQUEST: /ingest --- Received file: {file.filename}")
@@ -327,7 +379,9 @@ async def ingest_file(file: UploadFile = File(...)):
         upload_dir = "uploads"
         os.makedirs(upload_dir, exist_ok=True)
         
-        file_path = os.path.join(upload_dir, file.filename)
+        # Fix #6: Sanitize filename to prevent path traversal
+        safe_name = PurePosixPath(file.filename).name
+        file_path = os.path.join(upload_dir, safe_name)
         
         # Save the uploaded file locally
         with open(file_path, "wb") as buffer:
@@ -340,13 +394,12 @@ async def ingest_file(file: UploadFile = File(...)):
         if os.path.exists(file_path):
             os.remove(file_path)
             
-        # result returns {"status": "completed", ...} as requested
         logger.info(f"--- API RESPONSE: /ingest --- Successfully ingested: {file.filename}")
         return result
         
     except Exception as e:
         logger.error(f"--- API ERROR: /ingest --- {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/query", response_model=QueryResponse)
 async def query_softmania(request_body: QueryRequest, request: Request, response: Response):
@@ -375,58 +428,27 @@ async def query_softmania(request_body: QueryRequest, request: Request, response
             
         logger.info(f"--- API REQUEST: /query --- Session: {session_id} (new={is_new}) | Q: '{question[:80]}'")
 
-        # 2. Fetch chat history (normalized rows from query_logs)
-        # If HISTORY_MAX_TURNS is 0 or less, skip history retrieval to avoid
-        # unnecessary DB calls and keep the chat context empty.
-        chat_history = []
+        # Reject spam-clicking / concurrent session requests immediately (Fast-Fail 429)
+        if session_id in in_flight_sessions:
+            app_metrics["429_fast_fails"] += 1
+            logger.warning(f"--- API 429 FAST FAIL --- Session {session_id} has existing request in flight.")
+            raise HTTPException(status_code=429, detail="Please wait for the current request to complete before sending another.")
+            
+        in_flight_sessions.add(session_id)
+        app_metrics["total_queries"] += 1
+        
         try:
-            if int(Config.HISTORY_MAX_TURNS) > 0:
-                max_turns = int(Config.HISTORY_MAX_TURNS)
-                raw_history = await get_session_history(session_id, max_turns=max_turns)
+            # 2-5. Core Engine execution using Bulkhead/Semaphore pattern
+            async with llm_semaphore:
+                answer, hop_count, turn_index, is_complex = await generate_agent_response(session_id, question)
+        except Exception:
+            app_metrics["llm_errors"] += 1
+            raise
+        finally:
+            # Always ensure the session is unblocked regardless of exceptions
+            in_flight_sessions.discard(session_id)
 
-                # Convert normalized rows to LangChain Message objects
-                for entry in raw_history:
-                    if entry["role"] == "human":
-                        chat_history.append(HumanMessage(content=entry["content"]))
-                    elif entry["role"] == "assistant":
-                        chat_history.append(AIMessage(content=entry["content"]))
-            else:
-                # No history retention configured; leave chat_history empty
-                pass
-        except Exception as e:
-            logger.warning(f"Failed to fetch/parse session history: {e}")
-            chat_history = []
-
-        # 3. Fetch active links from the database to inject into the prompt
-        try:
-            links_data = await get_all_portal_links()
-            formatted_links = "\n".join(
-                f"- **{link['page_type'].title()}** ({link['domain']}): [{link['summary']}]({link['page_url']})"
-                for link in links_data
-            )
-            if not formatted_links:
-                formatted_links = "No active portal links currently available."
-        except Exception as e:
-            logger.warning(f"Failed to fetch portal links for injection: {e}")
-            formatted_links = "Error fetching links."
-
-        # 4. Invoke LangGraph with full context
-        initial_state = {
-            "question": question,
-            "hop_count": 0,
-            "retrieved_context": [],
-            "portal_links": formatted_links,
-            "chat_history": chat_history
-        }
-
-        result = await graph_app.ainvoke(initial_state)
-
-        answer = result.get("final_answer", "No answer generated.")
-        hop_count = result.get("hop_count", 0)
-
-        # 5. Append this turn to query_logs (two rows: human + assistant)
-        await append_turn(session_id, question, answer, hop_count)
-
+        app_metrics["successful_queries"] += 1
         logger.info(f"--- API RESPONSE: /query --- Session: {session_id} | Answer complete.")
         return QueryResponse(
             answer=answer,
@@ -439,7 +461,7 @@ async def query_softmania(request_body: QueryRequest, request: Request, response
         raise
     except Exception as e:
         logger.error(f"--- API ERROR: /query --- {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.post("/history", response_model=HistoryResponse)
@@ -478,7 +500,7 @@ async def get_chat_history(request_body: HistoryRequest, request: Request, respo
         )
     except Exception as e:
         logger.error(f"--- API ERROR: /history --- {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.post("/feedback")
@@ -514,19 +536,20 @@ async def submit_feedback(request_body: FeedbackRequest, request: Request, respo
         raise
     except Exception as e:
         logger.error(f"--- API ERROR: /feedback --- {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@app.delete("/clear")
+@app.delete("/clear", dependencies=[Depends(verify_admin)])
 async def clear_database():
     """
     Completely purges all data from the Vector Database and the
-    Knowledge Graph, acting as a full reset.
+    Knowledge Graph, acting as a full reset. Protected by admin API key.
     """
     try:
         await clear_all_vectors()
         await clear_all_graph_data()
         return {"status": "success", "message": "All database records have been purged."}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"--- API ERROR: /clear --- {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 

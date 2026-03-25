@@ -5,6 +5,8 @@ from src.agent.state import AgentState
 from src.config import Config
 from src.prompts import ROUTER_PROMPT, DECOMPOSER_PROMPT, SYNTHESIZER_PROMPT, COMPRESSOR_PROMPT
 from src.logger import setup_logger
+from tenacity import retry, wait_exponential_jitter, stop_after_attempt
+import httpx
 
 logger = setup_logger(__name__)
 
@@ -32,6 +34,11 @@ OFF_TOPIC_RESPONSE = (
 
 # ── Node Functions ──
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential_jitter(initial=1, max=30),
+    reraise=True
+)
 async def router_node(state: AgentState) -> Dict[str, Any]:
     """
     3-Tier Smart Router (1 fast LLM call) — acts as the FIRST guardrail:
@@ -50,7 +57,10 @@ async def router_node(state: AgentState) -> Dict[str, Any]:
         })
         route = decision.route_type.lower().strip()
     except Exception as e:
-        logger.warning(f"   -> Router failed ({e}), defaulting to 'simple'")
+        if "429" in str(e) or "rate limit" in str(e).lower() or isinstance(e, httpx.HTTPError):
+            logger.warning(f"   -> Router hit Rate Limit/Network error ({e}), bubbling up for @retry...")
+            raise
+        logger.warning(f"   -> Router format/logic failed ({e}), defaulting to 'simple'")
         route = "simple"
     
     # Validate route_type
@@ -64,6 +74,11 @@ async def router_node(state: AgentState) -> Dict[str, Any]:
     
     return {"route_type": route, "is_complex": route == "complex", "hop_count": 0}
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential_jitter(initial=1, max=30),
+    reraise=True
+)
 async def decomposer_node(state: AgentState) -> Dict[str, Any]:
     """Breaks down a complex query into simpler parallel sub-queries using the fast model."""
     logger.info("--- DECOMPOSER NODE ---")
@@ -73,6 +88,11 @@ async def decomposer_node(state: AgentState) -> Dict[str, Any]:
     logger.info(f"   -> Sub-queries generated: {result.queries}")
     return {"sub_queries": result.queries}
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential_jitter(initial=1, max=30),
+    reraise=True
+)
 async def compressor_node(state: AgentState) -> Dict[str, Any]:
     """Compresses retrieved context into dense facts using the fast model."""
     logger.info("--- COMPRESSOR NODE ---")
@@ -93,11 +113,19 @@ async def compressor_node(state: AgentState) -> Dict[str, Any]:
         compressed = result.compressed_text
         logger.info(f"   -> Context compressed from {len(raw_context)} to {len(compressed)} chars.")
     except Exception as e:
-        logger.error(f"   -> Compression failed, falling back to raw context: {e}")
+        if "429" in str(e) or "rate limit" in str(e).lower() or isinstance(e, httpx.HTTPError):
+            logger.warning(f"   -> Compressor hit Rate Limit/Network error ({e}), bubbling up for @retry...")
+            raise
+        logger.error(f"   -> Compression logic failed, falling back to raw context: {e}")
         compressed = raw_context
         
     return {"compressed_context": compressed}
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential_jitter(initial=1, max=30),
+    reraise=True
+)
 async def synthesizer_node(state: AgentState) -> Dict[str, Any]:
     """
     Synthesizes the final answer AND evaluates context sufficiency in one call.
@@ -135,7 +163,10 @@ async def synthesizer_node(state: AgentState) -> Dict[str, Any]:
             "is_sufficient": result.is_sufficient
         }
     except Exception as e:
-        logger.error(f"   -> Synthesizer Error/Guardrail Triggered: {e}")
+        if "429" in str(e) or "rate limit" in str(e).lower() or isinstance(e, httpx.HTTPError):
+            logger.warning(f"   -> Synthesizer hit Rate Limit/Network error ({e}), bubbling up for @retry...")
+            raise
+        logger.error(f"   -> Synthesizer Logic/Guardrail Triggered: {e}")
         return {
             "final_answer": "I apologize, but I am unable to safely process that request. (Safety Guardrail Triggered)",
             "is_sufficient": True  # Don't loop on errors
