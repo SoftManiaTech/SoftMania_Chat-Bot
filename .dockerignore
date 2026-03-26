@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Version Control
+.git/
+.gitignore
+.github/
+
+# Local dev / secrets — NEVER bake .env into the image
+.env
+*.env.local
+
+# Logs and runtime data (mounted at runtime, not baked in)
+logs/
+*.log
+
+# Large user data (uploaded at runtime via the API)
+data/
+
+# Docs and planning (not needed in container)
+docs/
+plan.md
+overview.md
+prompting-guide.md
+architecture_validation.md
+
+# Tests
+tests/
+
+# Prebuilt artefacts
+*.whl
+wheels/
+
+# IDE
+.vscode/
+.idea/
+*.swp
