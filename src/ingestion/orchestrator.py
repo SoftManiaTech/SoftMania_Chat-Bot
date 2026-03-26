@@ -1,12 +1,11 @@
 import asyncio
 from pathlib import Path
 from langchain_community.document_loaders import (
-    TextLoader, 
+    TextLoader,
     PyPDFLoader,
     BSHTMLLoader,
     Docx2txtLoader,
     CSVLoader,
-    UnstructuredMarkdownLoader
 )
 from src.ingestion.chunker import create_chunks
 from src.ingestion.extractor import parse_with_llm
@@ -42,7 +41,7 @@ async def ingest_document(file_path: str) -> Dict[str, Any]:
         ".htm": BSHTMLLoader,
         ".docx": Docx2txtLoader,
         ".csv": CSVLoader,
-        ".md": UnstructuredMarkdownLoader
+        ".md": TextLoader,
     }
     
     if suffix not in loader_mapping:

@@ -38,11 +38,18 @@ import asyncio
 
 logger = setup_logger(__name__)
 
-# Global concurrency limiter to prevent LLM backlogs and DB pool exhaustion
-llm_semaphore = asyncio.Semaphore(Config.LLM_CONCURRENCY_LIMIT)
+# Lazy-initialised semaphore — created inside the event loop, not at import time
+# (Vercel/Lambda bootstraps the module before starting an event loop)
+_llm_semaphore: asyncio.Semaphore | None = None
+
+def get_semaphore() -> asyncio.Semaphore:
+    global _llm_semaphore
+    if _llm_semaphore is None:
+        _llm_semaphore = asyncio.Semaphore(Config.LLM_CONCURRENCY_LIMIT)
+    return _llm_semaphore
 
 # Prevent users from queueing multiple requests in the same session (spam filtering)
-in_flight_sessions = set()
+in_flight_sessions: set = set()
 
 # Basic Application Metrics (in-memory)
 app_metrics = {
@@ -150,10 +157,21 @@ async def verify_admin(request: Request):
 
 @asynccontextmanager
 async def lifespan(app):
-    """Create DB tables on server boot if they don't exist."""
+    """
+    Create DB tables on server boot if they don't exist.
+    Non-fatal: if env vars are missing the app still boots so /health is reachable.
+    Endpoints that need the DB will return 500 until the env vars are configured.
+    """
     logger.info("Running DB table setup on startup...")
-    await setup_pgvector_tables()
-    logger.info("DB tables ready.")
+    try:
+        await setup_pgvector_tables()
+        logger.info("DB tables ready.")
+    except Exception as e:
+        logger.error(
+            f"DB setup failed on startup (check NEON_DATABASE_URL env var): {e}\n"
+            "The app will continue running but database endpoints will return 500 "
+            "until the environment variable is configured."
+        )
     yield
     await Config.close_all()
 
@@ -176,7 +194,16 @@ app.add_middleware(
 )
 
 # Mount static files (widget.html lives here)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Reliable path resolution to the project root
+import os as _os
+_project_root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), "../.."))
+_static_dir = _os.path.join(_project_root, "static")
+
+if _os.path.isdir(_static_dir):
+    app.mount("/static", StaticFiles(directory=_static_dir), name="static")
+else:
+    # If the widget silently 404s, this log will show exactly why and where it looked
+    logger.warning(f"CRITICAL: Static directory not found at '{_static_dir}'. The chatbot widget will return 404.")
 
 # ---------------------------------------------------------
 # Request / Response Models
@@ -427,7 +454,7 @@ async def query_softmania(request_body: QueryRequest, request: Request, response
         
         try:
             # 2-5. Core Engine execution using Bulkhead/Semaphore pattern
-            async with llm_semaphore:
+            async with get_semaphore():
                 answer, hop_count, turn_index, is_complex = await generate_agent_response(session_id, question)
         except Exception:
             app_metrics["llm_errors"] += 1

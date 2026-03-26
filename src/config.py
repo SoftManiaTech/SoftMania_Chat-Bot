@@ -33,7 +33,7 @@ class Config:
     # Hugging Face Settings
     # ---------------------------------------------------------
     HF_HOME = os.getenv("HF_HOME", os.path.abspath("./.cache/huggingface"))
-    LOCAL_EMBEDDING_MODEL = os.getenv("LOCAL_EMBEDDING_MODEL", "true").lower() != "false"
+    LOCAL_EMBEDDING_MODEL = os.getenv("LOCAL_EMBEDDING_MODEL", "false").lower() != "false"
     
     # ---------------------------------------------------------
     # Cookie & Security
