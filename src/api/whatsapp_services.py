@@ -3,7 +3,7 @@ import hashlib
 import time
 import logging
 from collections import defaultdict
-from fastapi import APIRouter, Request, HTTPException, Query
+from fastapi import APIRouter, Request, HTTPException, Query, BackgroundTasks
 from fastapi.responses import PlainTextResponse
 from src.config import Config
 from src.whatsapp.bot import process_whatsapp_message
@@ -46,7 +46,7 @@ async def verify_webhook(
     raise HTTPException(status_code=403, detail="Verification failed")
 
 @router.post("/webhook/")
-async def whatsapp_webhook(request: Request):
+async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
     """
     WhatsApp webhook endpoint for receiving messages.
     """
@@ -85,14 +85,14 @@ async def whatsapp_webhook(request: Request):
                                 
                                 if message_type == "text":
                                     text = message.get("text", {}).get("body", "")
-                                    # Process the message logic
-                                    await process_whatsapp_message(from_number, text)
+                                    # Process the message logic in the background
+                                    background_tasks.add_task(process_whatsapp_message, from_number, text)
                                 elif message_type == "interactive":
                                     interactive = message.get("interactive", {})
                                     if interactive.get("type") == "button_reply":
                                         button_id = interactive.get("button_reply", {}).get("id")
                                         from src.whatsapp.bot import process_whatsapp_interactive
-                                        await process_whatsapp_interactive(from_number, button_id)
+                                        background_tasks.add_task(process_whatsapp_interactive, from_number, button_id)
                                 else:
                                     logger.info(f"Received non-text message type: {message_type}")
                                     
