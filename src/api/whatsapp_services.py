@@ -15,12 +15,31 @@ router = APIRouter(tags=["WhatsApp"])
 # Fix #9: Simple in-memory rate limiter per phone number
 _rate_limit: dict = defaultdict(list)  # phone -> list of timestamps
 
+# Fix: Webhook deduplication to prevent duplicate AI responses
+# Meta guarantees "at least once" delivery, so we must deduplicate by message ID.
+_processed_message_ids: dict[str, float] = {}  # message_id -> timestamp
+
 def _is_rate_limited(phone: str) -> bool:
     now = time.time()
     _rate_limit[phone] = [t for t in _rate_limit[phone] if now - t < Config.WA_RATE_WINDOW]
     if len(_rate_limit[phone]) >= Config.WA_RATE_LIMIT:
         return True
     _rate_limit[phone].append(now)
+    return False
+
+def _is_duplicate_message(message_id: str) -> bool:
+    if not message_id:
+        return False
+    now = time.time()
+    # Cleanup old message IDs (older than 10 minutes)
+    keys_to_delete = [msg_id for msg_id, t in _processed_message_ids.items() if now - t > 600]
+    for k in keys_to_delete:
+        _processed_message_ids.pop(k, None)
+        
+    if message_id in _processed_message_ids:
+        return True
+    
+    _processed_message_ids[message_id] = now
     return False
 
 @router.get("/webhook/")
@@ -77,7 +96,12 @@ async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
                             for message in value["messages"]:
                                 from_number = message.get("from")
                                 message_type = message.get("type")
+                                message_id = message.get("id")
                                 
+                                # Fix: Deduplicate incoming messages to prevent double-processing
+                                if _is_duplicate_message(message_id):
+                                    logger.warning(f"Duplicate webhook received for message {message_id} — ignoring.")
+                                    continue                                
                                 # Fix #9: Per-phone rate limiting
                                 if _is_rate_limited(from_number):
                                     logger.warning(f"Rate limited phone: {from_number}")
