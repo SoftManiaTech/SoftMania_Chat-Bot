@@ -23,7 +23,7 @@ def _is_rate_limited(phone: str) -> bool:
     _rate_limit[phone].append(now)
     return False
 
-@router.get("/webhook")
+@router.get("/webhook/")
 async def verify_webhook(
     hub_mode: str = Query(None, alias="hub.mode"),
     hub_challenge: str = Query(None, alias="hub.challenge"),
@@ -45,7 +45,7 @@ async def verify_webhook(
     logger.warning("WhatsApp webhook verification failed.")
     raise HTTPException(status_code=403, detail="Verification failed")
 
-@router.post("/webhook")
+@router.post("/webhook/")
 async def whatsapp_webhook(request: Request):
     """
     WhatsApp webhook endpoint for receiving messages.
