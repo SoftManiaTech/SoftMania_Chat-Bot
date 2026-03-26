@@ -26,7 +26,7 @@
      ══════════════════════════════════════════ */
   #chat-window{
     position:fixed;bottom:24px;right:24px;width:380px;height:520px;
-    border-radius:16px;background:#0f0f13;
+    border-radius:16px;background:#f6fff6;
     box-shadow:0 8px 40px rgba(0,0,0,.55);
     display:none;flex-direction:column;z-index:10000;
     border:1px solid rgba(255,255,255,.08);overflow:hidden;
@@ -40,7 +40,7 @@
   #chat-window.fullscreen{
     width:100vw;height:100vh;
     bottom:0;right:0;
-    border-radius:0;background:#0f0f13;
+    border-radius:0;background:#f6fff6;
     box-shadow:none;border:none;
   }
   #chat-window.fullscreen #chat-header{
@@ -106,8 +106,9 @@
      ══════════════════════════════════════════ */
   #chat-header{
     padding:14px 16px;display:flex;align-items:center;justify-content:space-between;
-    background:linear-gradient(135deg,#6366f1,#8b5cf6);
-    color:#fff;font-weight:600;font-size:15px;flex-shrink:0;
+    background:#00FF33;
+    color:#111;font-weight:700;font-size:15px;flex-shrink:0;
+    letter-spacing:0.5px;
   }
   #chat-header .header-controls{display:flex;gap:10px;align-items:center}
   #chat-header button{
@@ -248,9 +249,9 @@
   /* ══════════════════════════════════════════
      LIGHT THEME (via ?theme=light)
      ══════════════════════════════════════════ */
-  .theme-light #chat-window{background:#fafafa;border-color:#e0e0e0}
-  .theme-light #chat-window.fullscreen{background:#fafafa}
-  .theme-light #chat-header{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+  .theme-light #chat-window{background:#f6fff6;border-color:#e0e0e0}
+  .theme-light #chat-window.fullscreen{background:#f6fff6}
+  .theme-light #chat-header{background:#00FF33;color:#111;font-weight:700;}
   .theme-light #messages{scrollbar-color:#ccc transparent}
   .theme-light .msg.bot{background:#f0f0f5;color:#1a1a1a;border-color:#e0e0e0}
   .theme-light .msg.bot strong{color:#4f46e5}
