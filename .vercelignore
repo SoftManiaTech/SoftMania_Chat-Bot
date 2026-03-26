@@ -1,41 +1,56 @@
-# Virtual environments
+# =============================================================================
+# .vercelignore — Vercel deployment exclusions
+# Vercel only needs: src/, static/, requirements.txt
+# Everything else is excluded to keep the serverless bundle small.
+# =============================================================================
+
+# ── Virtual environments ──────────────────────────────────────────────────────
 venv/
 .venv/
 env/
 
-# Python cache
+# ── Python cache ──────────────────────────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# Local data & logs
+# ── Local data & logs (runtime only) ─────────────────────────────────────────
 data/
 logs/
+uploads/
 *.log
 
-# Development & test files
+# ── Development & test files ──────────────────────────────────────────────────
 tests/
 docs/
 scrips/
 
-# Local cache dirs (HuggingFace, etc.)
+# ── Local HF model cache (not needed on Vercel — no local models) ─────────────
 .cache/
-*.cache
 
-# Git
+# ── Git ───────────────────────────────────────────────────────────────────────
 .git/
 .github/
 
-# Docker (not needed on Vercel)
+# ── Docker files (not used on Vercel) ────────────────────────────────────────
 Dockerfile
 docker-compose.yml
 .dockerignore
 
-# IDE
+# ── IDE ───────────────────────────────────────────────────────────────────────
 .vscode/
 .idea/
 
-# Local env files
+# ── Secrets (set via Vercel Environment Variables dashboard, not files) ───────
 .env
 *.env
+prod.example.env
+example.env
+.example.env
+
+# ── Planning & docs ───────────────────────────────────────────────────────────
+plan.md
+overview.md
+prompting-guide.md
+architecture_validation.md

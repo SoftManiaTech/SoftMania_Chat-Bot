@@ -11,10 +11,21 @@ services:
     environment:
       - PORT=7860
       - HOST=0.0.0.0
+      # Set to "true" to enable local tokenizer cache download on first boot.
+      # Set to "false" to skip HF Hub calls entirely (pure API-only mode).
+      - LOCAL_EMBEDDING_MODEL=true
     volumes:
-      # Optional: Mount the cache directory to prevent re-downloading HF models if the container restarts
+      # Persist HF tokenizer cache between container restarts.
+      # Without this, the tokenizer config (~100 KB) is re-downloaded on every
+      # `docker compose up` that starts a fresh container.
       - huggingface_cache:/app/.cache/huggingface
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 volumes:
   huggingface_cache:

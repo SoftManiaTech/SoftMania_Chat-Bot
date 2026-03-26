@@ -1,47 +1,65 @@
-# Python
+# =============================================================================
+# .dockerignore — HuggingFace Spaces / Docker build exclusions
+# Keeps the image lean and prevents secrets from being baked in.
+# =============================================================================
+
+# ── Python runtime artifacts ──────────────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
-venv/
-.venv/
-env/
 *.egg-info/
 dist/
 build/
 
-# Version Control
+# ── Virtual environments ──────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+
+# ── Secrets — NEVER bake .env into a Docker image ────────────────────────────
+.env
+*.env
+*.env.local
+prod.example.env
+example.env
+.example.env
+
+# ── Version control ───────────────────────────────────────────────────────────
 .git/
 .gitignore
 .github/
 
-# Local dev / secrets — NEVER bake .env into the image
-.env
-*.env.local
-
-# Logs and runtime data (mounted at runtime, not baked in)
+# ── Logs & runtime-generated data ────────────────────────────────────────────
 logs/
 *.log
+uploads/
 
-# Large user data (uploaded at runtime via the API)
+# ── Large user data (uploaded at runtime via /ingest API, not baked in) ──────
 data/
 
-# Docs and planning (not needed in container)
+# ── Docs, planning & dev notes (not needed in container) ─────────────────────
 docs/
+scrips/
 plan.md
 overview.md
 prompting-guide.md
 architecture_validation.md
+README.md
 
-# Tests
+# ── Tests ─────────────────────────────────────────────────────────────────────
 tests/
 
-# Prebuilt artefacts
+# ── Pre-built wheel artefacts ─────────────────────────────────────────────────
 *.whl
 wheels/
 
-# IDE
+# ── Local HF cache (populated at runtime — mounted via docker-compose volume) ─
+.cache/
+
+# ── IDE / editor ──────────────────────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
+*.swo
