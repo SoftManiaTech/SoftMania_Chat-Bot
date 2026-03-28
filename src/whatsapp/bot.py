@@ -76,7 +76,7 @@ async def process_whatsapp_message(from_number: str, text: str):
         # Toggle: Use Static Template vs AI Agent
         if not Config.WA_USE_AGENT:
             logger.info(f"WhatsApp Agent is DISABLED (Static Mode). Sending template to {from_number}")
-            send_whatsapp_message(from_number, Config.WA_STATIC_RESPONSE)
+            send_whatsapp_message(from_number, "Template mode is enabled!")
             return
 
         from src.api.chat_engine import generate_agent_response
