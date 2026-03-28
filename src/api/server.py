@@ -256,7 +256,7 @@ LANDING_HTML = """\
 <title>SoftMania Chat-Bot API</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0fff0;color:#08320a;min-height:100vh}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a0f;color:#e2e2f0;min-height:100vh}
   .container{max-width:780px;margin:0 auto;padding:48px 24px}
   h1{font-size:28px;background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
   .sub{color:#888;font-size:14px;margin-bottom:36px}
@@ -267,8 +267,8 @@ LANDING_HTML = """\
   th{color:#a5b4fc;font-weight:600;background:#12121a}
   td{color:#ccc}
   td code{background:#1e1e2e;padding:2px 6px;border-radius:4px;font-size:12px;color:#c4b5fd}
-    .code-block{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin:10px 0 24px;overflow-x:auto;position:relative}
-    .code-block code{font-family:'Cascadia Code','Fira Code',monospace;font-size:12.5px;color:#1e293b;white-space:pre;display:block}
+  .code-block{background:#12121a;border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:16px;margin:10px 0 24px;overflow-x:auto;position:relative}
+  .code-block code{font-family:'Cascadia Code','Fira Code',monospace;font-size:12.5px;color:#c4b5fd;white-space:pre;display:block}
   .copy-btn{position:absolute;top:8px;right:10px;background:#6366f1;color:#fff;border:none;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;opacity:.8;transition:opacity .15s}
   .copy-btn:hover{opacity:1}
   .badge{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600}
@@ -284,6 +284,17 @@ LANDING_HTML = """\
 <div class="container">
   <h1>🚀 SoftMania Chat-Bot API</h1>
   <p class="sub">Hybrid LangGraph Agent · Neon PGVector · Neo4j Knowledge Graph</p>
+
+  <h2>📡 API Endpoints</h2>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+    <tr><td><span class="badge get">GET</span></td><td><code>/health</code></td><td>Health check</td></tr>
+    <tr><td><span class="badge post">POST</span></td><td><code>/query</code></td><td>Interact with the intelligence engine</td></tr>
+    <tr><td><span class="badge post">POST</span></td><td><code>/history</code></td><td>Fetch session conversation history</td></tr>
+    <tr><td><span class="badge post">POST</span></td><td><code>/feedback</code></td><td>Submit like/dislike for a message</td></tr>
+    <tr><td><span class="badge post">POST</span></td><td><code>/ingest</code></td><td>Upload a document for ingestion</td></tr>
+    <tr><td><span class="badge del">DELETE</span></td><td><code>/clear</code></td><td>Purge all database records</td></tr>
+  </table>
 
   <h2>💬 Embeddable Chat Widget</h2>
   <p>Copy the snippet below to embed the chatbot seamlessly on any website:</p>
@@ -307,30 +318,31 @@ LANDING_HTML = """\
 &lt;/script&gt;</code>
   </div>
 
-    <!-- Live preview removed as requested -->
+  <h2>🔍 Live Preview</h2>
+  <div class="preview">
+    <!-- Notice we don't resize the generic preview widget, as that simulates a mobile screen embed locally -->
+    <iframe src="/static/widget.html" title="Chat Widget Preview"></iframe>
+  </div>
 
   <div class="footer">SoftMania Technologies · Intelligence Engine · Powered by LangGraph</div>
 </div>
 
-
-<!-- Embed the chatbot widget on the landing page (bottom right, no duplication) -->
+<!-- Render the actual Chatbot Widget on this Landing Page using the above snippet -->
 <script>
-    (function(){
-        if (!document.getElementById('softmania-chat-widget')) {
-            var i=document.createElement('iframe');
-            i.id="softmania-chat-widget";
-            i.src="{BASE_URL}/static/widget.html";
-            i.style.cssText="border:none;position:fixed;bottom:0;right:0;width:100px;height:100px;z-index:99999;transition:all 0.3s ease;color-scheme:light dark;background:transparent;";
-            i.allow="clipboard-read; clipboard-write";
-            document.body.appendChild(i);
-            window.addEventListener("message", function(e){
-                if(e.data === 'softmania-open') { i.style.width="420px"; i.style.height="580px"; }
-                if(e.data === 'softmania-close') { i.style.width="100px"; i.style.height="100px"; }
-                if(e.data === 'softmania-fullscreen') { i.style.width="100vw"; i.style.height="100vh"; }
-                if(e.data === 'softmania-fullscreen-exit') { i.style.width="420px"; i.style.height="580px"; }
-            });
-        }
-    })();
+  (function(){
+    var i=document.createElement('iframe');
+    i.id="softmania-chat-widget";
+    i.src="{BASE_URL}/static/widget.html";
+    i.style.cssText="border:none;position:fixed;bottom:0;right:0;width:100px;height:100px;z-index:99999;transition:all 0.3s ease;color-scheme:light dark;background:transparent;";
+    i.allow="clipboard-read; clipboard-write";
+    document.body.appendChild(i);
+    window.addEventListener("message", function(e){
+      if(e.data === 'softmania-open') { i.style.width="420px"; i.style.height="580px"; }
+      if(e.data === 'softmania-close') { i.style.width="100px"; i.style.height="100px"; }
+      if(e.data === 'softmania-fullscreen') { i.style.width="100vw"; i.style.height="100vh"; }
+      if(e.data === 'softmania-fullscreen-exit') { i.style.width="420px"; i.style.height="580px"; }
+    });
+  })();
 </script>
 
 </body>

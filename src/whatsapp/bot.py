@@ -5,7 +5,6 @@ import logging
 from pywa import WhatsApp
 from pywa.types import Button
 from src.config import Config
-from src.api.chat_engine import generate_agent_response
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +68,17 @@ async def process_whatsapp_message(from_number: str, text: str):
     
     # We use the WhatsApp Phone Number as the session ID for memory!
     try:
+        if not Config.WA_STATUS:
+            logger.info(f"WhatsApp is DISABLED. Sending template to {from_number}")
+            send_whatsapp_message(from_number, Config.WA_STATIC_RESPONSE)
+            return
+
+        # Toggle: Use Static Template vs AI Agent
+        if not Config.WA_USE_AGENT:
+            logger.info(f"WhatsApp Agent is DISABLED (Static Mode). Sending template to {from_number}")
+            send_whatsapp_message(from_number, Config.WA_STATIC_RESPONSE)
+            return
+
         from src.api.chat_engine import generate_agent_response
         from src.ingestion.vector_db import ensure_session
 

@@ -76,6 +76,12 @@ class Config:
     LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT", "15"))            # Hard timeout in seconds for LLM APIs
     LLM_CONCURRENCY_LIMIT = int(os.getenv("LLM_CONCURRENCY_LIMIT", "10")) # Global semaphore for LLM endpoints
 
+    # WhatsApp Behavior Toggle
+    WA_USE_AGENT = os.getenv("WA_USE_AGENT", "false").lower() == "true"
+    WA_STATIC_RESPONSE = os.getenv("WA_STATIC_RESPONSE", "Hello! We've received your message. SoftMania AI Agent is currently in 'Maintenance Mode'. We will get back to you soon!")
+    # WhatsApp Bot Status false = maintenance mode, true = online
+    WA_STATUS = os.getenv("WA_STATUS", "false").lower() == "true"
+
     @classmethod
     def get_neo4j_graph(cls):
         """Returns the LangChain Neo4jGraph integration instance."""
