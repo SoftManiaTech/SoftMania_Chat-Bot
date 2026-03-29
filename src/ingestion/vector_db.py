@@ -385,6 +385,9 @@ async def setup_whatsapp_template_tables(conn):
 
     # Menu Logs: Linear tracking of messages sent in Template Mode
     # Now references chat_sessions instead of the old standalone table
+    # We must explicitly drop the old version so the 'session_id' column change takes effect
+    await conn.execute("DROP TABLE IF EXISTS whatsapp_template_logs CASCADE;")
+
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS whatsapp_template_logs (
             id SERIAL PRIMARY KEY,
