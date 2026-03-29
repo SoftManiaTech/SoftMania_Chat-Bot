@@ -69,32 +69,9 @@ def send_whatsapp_message(to_phone_number: str, text_content: str, preview_url: 
 
 
 # ---------------------------------------------------------------------------
-# Menu Session Store — In-memory, per phone number
+# Menu Session Store — Database Backed
 # ---------------------------------------------------------------------------
-# Maps phone_number -> { "current_node": str, "last_updated": float }
-# Transient by design: resets on server restart (menu navigation is not persistent state).
-_menu_sessions: dict[str, dict] = {}
-
-
-def _get_menu_session(phone: str) -> dict | None:
-    """Returns the active menu session for a phone, or None if expired/missing."""
-    session = _menu_sessions.get(phone)
-    if not session:
-        return None
-    timeout_sec = Config.WA_MENU_SESSION_TIMEOUT
-    if time.time() - session["last_updated"] > timeout_sec:
-        logger.info(f"Menu session for {phone} has expired. Clearing.")
-        _menu_sessions.pop(phone, None)
-        return None
-    return session
-
-
-def _set_menu_session(phone: str, node: str):
-    """Creates or updates the menu session for a phone number."""
-    _menu_sessions[phone] = {
-        "current_node": node,
-        "last_updated": time.time(),
-    }
+from src.ingestion.vector_db import get_menu_session, set_menu_session, log_menu_interaction
 
 
 # ---------------------------------------------------------------------------
@@ -134,7 +111,7 @@ async def process_whatsapp_message(from_number: str, text: str):
         # PRIORITY 2: Menu (State Machine) Mode
         # ---------------------------------------------------------------
         if not Config.WA_USE_AGENT:
-            _handle_menu_mode(from_number, text)
+            await _handle_menu_mode(from_number, text)
             return
 
         # ---------------------------------------------------------------
@@ -156,7 +133,7 @@ async def process_whatsapp_message(from_number: str, text: str):
         send_whatsapp_message(from_number, "Sorry, I encountered an internal error processing your request.")
 
 
-def _handle_menu_mode(from_number: str, text: str):
+async def _handle_menu_mode(from_number: str, text: str):
     """
     Handles all logic for Menu (State Machine) Mode.
     Called when WA_STATUS=true and WA_USE_AGENT=false.
@@ -169,26 +146,35 @@ def _handle_menu_mode(from_number: str, text: str):
     normalized = text.lower().strip()
     root_triggers = get_root_triggers()
 
+    # Log incoming user message
+    # Node is unknown right now, we will associate it with the state they were in
+    current_node = await get_menu_session(from_number, Config.WA_MENU_SESSION_TIMEOUT)
+    await log_menu_interaction(from_number, "user", text, current_node)
+
     # Step A: Root trigger detected → reset to root menu
     if normalized in root_triggers:
         logger.info(f"[MENU] Root trigger '{text}' from {from_number}. Starting root_menu.")
-        _set_menu_session(from_number, "root_menu")
-        send_whatsapp_message(from_number, get_root_menu_message())
+        await set_menu_session(from_number, "root_menu")
+        bot_reply = get_root_menu_message()
+        send_whatsapp_message(from_number, bot_reply)
+        await log_menu_interaction(from_number, "bot", bot_reply, "root_menu")
         return
 
     # Step B: Active session exists → process state transition
-    session = _get_menu_session(from_number)
-    if session:
-        current_node = session["current_node"]
+    if current_node:
         logger.info(f"[MENU] {from_number} on node '{current_node}', input='{text}'")
         response, next_node = process_menu_input(current_node, text)
-        _set_menu_session(from_number, next_node)
+        await set_menu_session(from_number, next_node)
         send_whatsapp_message(from_number, response)
+        await log_menu_interaction(from_number, "bot", response, next_node)
         return
 
     # Step C: No session, no trigger → guide the user to start
     logger.info(f"[MENU] No active session for {from_number}. Sending prompt.")
-    send_whatsapp_message(from_number, "👋 Hi! Type *menu* to get started.")
+    prompt = "👋 Hi! Type *menu* to get started."
+    send_whatsapp_message(from_number, prompt)
+    await log_menu_interaction(from_number, "bot", prompt, None)
+
 
 
 # ---------------------------------------------------------------------------
