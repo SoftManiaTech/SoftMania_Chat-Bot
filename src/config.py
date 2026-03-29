@@ -81,6 +81,10 @@ class Config:
     WA_STATIC_RESPONSE = os.getenv("WA_STATIC_RESPONSE", "Hello! We've received your message. SoftMania AI Agent is currently in 'Maintenance Mode'. We will get back to you soon!")
     # WhatsApp Bot Status false = maintenance mode, true = online
     WA_STATUS = os.getenv("WA_STATUS", "false").lower() == "true"
+    # Path to the WhatsApp menu state-machine config (JSON)
+    WA_MENU_CONFIG_PATH = os.getenv("WA_MENU_CONFIG_PATH", "src/whatsapp/menu_config.json")
+    # Menu session timeout in seconds (default 30 minutes)
+    WA_MENU_SESSION_TIMEOUT = int(os.getenv("WA_MENU_SESSION_TIMEOUT", "1800"))
 
     @classmethod
     def get_neo4j_graph(cls):

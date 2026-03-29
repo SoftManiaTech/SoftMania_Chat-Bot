@@ -1,0 +1,63 @@
+{
+  "version": "1.0",
+  "settings": {
+    "root_trigger": ["menu", "hi", "hello", "home", "start"],
+    "fallback_message": "❌ Invalid option. Please choose from the menu above.",
+    "session_timeout_sec": 1800
+  },
+  "nodes": {
+    "root_menu": {
+      "message": "👋 Welcome to *SoftMania*!\n\nPlease select an option:\n\n1️⃣ Our Services\n2️⃣ Contact Support\n3️⃣ About Us",
+      "input_type": "number",
+      "options": {
+        "1": "services_menu",
+        "2": "support_menu",
+        "3": "about_node"
+      },
+      "fallback": "root_menu",
+      "terminal": false
+    },
+    "services_menu": {
+      "message": "🛠️ *Our Services:*\n\n1️⃣ AI Solutions\n2️⃣ Software Development\n3️⃣ 🔙 Back to Main Menu",
+      "input_type": "number",
+      "options": {
+        "1": "ai_node",
+        "2": "dev_node",
+        "3": "root_menu"
+      },
+      "fallback": "services_menu",
+      "terminal": false
+    },
+    "ai_node": {
+      "message": "🤖 *SoftMania AI Solutions*\n\nWe build intelligent chatbots, RAG systems, and custom AI integrations for your business.\n\n_Reply 'menu' to return to the main menu._",
+      "terminal": true
+    },
+    "dev_node": {
+      "message": "💻 *Software Development*\n\nWe engineer high-quality, scalable web and mobile applications tailored to your requirements.\n\n_Reply 'menu' to return to the main menu._",
+      "terminal": true
+    },
+    "support_menu": {
+      "message": "📞 *Contact Support:*\n\n1️⃣ WhatsApp Support\n2️⃣ Email Support\n3️⃣ 🔙 Back to Main Menu",
+      "input_type": "number",
+      "options": {
+        "1": "support_wa",
+        "2": "support_email",
+        "3": "root_menu"
+      },
+      "fallback": "support_menu",
+      "terminal": false
+    },
+    "support_wa": {
+      "message": "📱 *WhatsApp Support*\n\nYou can reach our team directly on this number.\nOur support hours are *Mon–Fri, 9am–6pm IST*.\n\n_Reply 'menu' to return to the main menu._",
+      "terminal": true
+    },
+    "support_email": {
+      "message": "📧 *Email Support*\n\nSend us your query at:\n➡️ support@softmania.in\n\nWe typically respond within *24 business hours*.\n\n_Reply 'menu' to return to the main menu._",
+      "terminal": true
+    },
+    "about_node": {
+      "message": "🏢 *About SoftMania*\n\nSoftMania is a technology company specializing in AI-powered products and intelligent automation solutions.\n\n🌐 Visit us: https://softmania.in\n\n_Reply 'menu' to return to the main menu._",
+      "terminal": true
+    }
+  }
+}
