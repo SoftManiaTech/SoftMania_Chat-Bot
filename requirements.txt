@@ -1,30 +1,20 @@
-# Core async DB
 asyncpg==0.31.0
-
-# Document parsing
 beautifulsoup4==4.14.3
 docx2txt==0.8
-pypdf==6.8.0
-
-# Web framework  
 fastapi==0.135.1
-python-multipart==0.0.22
-uvicorn==0.41.0
-
-# AI / LangChain (only what's actually imported)
+httpx==0.28.1
+huggingface_hub==1.6.0
+langchain-community==0.4.1
 langchain-core==1.2.18
 langchain-mistralai==1.1.1
 langchain-neo4j==0.8.0
 langchain-text-splitters==1.1.1
 langgraph==1.0.10
-huggingface_hub==1.6.0
-
-# WhatsApp
-pywa==3.9.0
-
-# Utilities
-httpx==0.28.1
 pydantic==2.12.5
+pypdf==6.8.0
 python-dotenv==1.2.2
+python-multipart==0.0.22
+pywa==3.9.0
 PyYAML==6.0.3
 tenacity==9.1.4
+uvicorn==0.41.0
