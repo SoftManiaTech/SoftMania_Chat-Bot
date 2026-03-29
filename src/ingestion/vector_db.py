@@ -195,6 +195,9 @@ async def setup_chat_sessions_table(conn):
     await conn.execute("""
         ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS last_turn_index INTEGER DEFAULT -1;
     """)
+    await conn.execute("""
+        ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS current_menu_node TEXT;
+    """)
 
 
 # ---------------------------------------------------------
@@ -377,20 +380,15 @@ async def setup_whatsapp_template_tables(conn):
     Creates lightweight tracking tables strictly for the menu state machine.
     This runs completely isolated from the RAG query_logs.
     """
-    # 1. Menu Sessions: Tracks where the user currently is
-    await conn.execute("""
-        CREATE TABLE IF NOT EXISTS whatsapp_template_sessions (
-            phone_number TEXT PRIMARY KEY,
-            current_node TEXT NOT NULL,
-            last_active TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
+    # Drop the old standalone table if it exists
+    await conn.execute("DROP TABLE IF EXISTS whatsapp_template_sessions CASCADE;")
 
-    # 2. Menu Logs: Linear tracking of messages sent in Template Mode
+    # Menu Logs: Linear tracking of messages sent in Template Mode
+    # Now references chat_sessions instead of the old standalone table
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS whatsapp_template_logs (
             id SERIAL PRIMARY KEY,
-            phone_number TEXT NOT NULL REFERENCES whatsapp_template_sessions(phone_number) ON DELETE CASCADE,
+            session_id TEXT NOT NULL REFERENCES chat_sessions(session_id) ON DELETE CASCADE,
             role TEXT NOT NULL CHECK (role IN ('user', 'bot')),
             content TEXT NOT NULL,
             node TEXT,
@@ -398,20 +396,20 @@ async def setup_whatsapp_template_tables(conn):
         );
     """)
 
-async def get_menu_session(phone_number: str, timeout_sec: int) -> Optional[str]:
+async def get_menu_session(session_id: str, timeout_sec: int) -> Optional[str]:
     """
-    Returns the current_node for a phone_number if it exists and hasn't expired.
+    Returns the current_menu_node for a session_id if it exists and hasn't expired.
     Otherwise returns None, prompting a reset to root_menu.
     """
     pool = await Config.get_pg_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow("""
-            SELECT current_node, last_active 
-            FROM whatsapp_template_sessions 
-            WHERE phone_number = $1
-        """, phone_number)
+            SELECT current_menu_node, last_active 
+            FROM chat_sessions 
+            WHERE session_id = $1
+        """, session_id)
 
-        if not row:
+        if not row or row['current_menu_node'] is None:
             return None
 
         # Check expiration logic
@@ -421,35 +419,35 @@ async def get_menu_session(phone_number: str, timeout_sec: int) -> Optional[str]
         if time_diff > timeout_sec:
             import logging
             logger = logging.getLogger(__name__)
-            logger.info(f"Menu session for {phone_number} expired ({time_diff}s > {timeout_sec}s).")
-            # Clear the old session
-            await conn.execute("DELETE FROM whatsapp_template_sessions WHERE phone_number = $1", phone_number)
+            logger.info(f"Menu session for {session_id} expired ({time_diff}s > {timeout_sec}s).")
+            # Nullify the template state without deleting the whole RAG session
+            await conn.execute("UPDATE chat_sessions SET current_menu_node = NULL WHERE session_id = $1", session_id)
             return None
             
-        return row['current_node']
+        return row['current_menu_node']
 
-async def set_menu_session(phone_number: str, current_node: str):
+async def set_menu_session(session_id: str, current_node: str):
     """
-    UPSERT the user's current menu node and update last_active.
+    Updates the user's current menu node and last_active.
+    We assume the session was already created via ensure_session in the router.
     """
     pool = await Config.get_pg_pool()
     async with pool.acquire() as conn:
         await conn.execute("""
-            INSERT INTO whatsapp_template_sessions (phone_number, current_node, last_active)
-            VALUES ($1, $2, CURRENT_TIMESTAMP)
-            ON CONFLICT (phone_number) DO UPDATE
-            SET current_node = $2,
+            UPDATE chat_sessions
+            SET current_menu_node = $2,
                 last_active = CURRENT_TIMESTAMP
-        """, phone_number, current_node)
+            WHERE session_id = $1
+        """, session_id, current_node)
 
-async def log_menu_interaction(phone_number: str, role: str, content: str, node: Optional[str] = None):
+async def log_menu_interaction(session_id: str, role: str, content: str, node: Optional[str] = None):
     """
     Inserts a fast lightweight tracking log for template mode interactions.
     """
     pool = await Config.get_pg_pool()
     async with pool.acquire() as conn:
         await conn.execute("""
-            INSERT INTO whatsapp_template_logs (phone_number, role, content, node)
+            INSERT INTO whatsapp_template_logs (session_id, role, content, node)
             VALUES ($1, $2, $3, $4)
-        """, phone_number, role, content, node)
+        """, session_id, role, content, node)
 

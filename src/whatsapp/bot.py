@@ -146,6 +146,13 @@ async def _handle_menu_mode(from_number: str, text: str):
     normalized = text.lower().strip()
     root_triggers = get_root_triggers()
 
+    # Ensure the chat_session row exists before doing any template logic/logging
+    import hmac
+    import hashlib
+    from src.ingestion.vector_db import ensure_session
+    wa_hmac = hmac.new(Config.SESSION_HMAC_SECRET.encode(), from_number.encode(), hashlib.sha256).hexdigest()
+    await ensure_session(from_number, wa_hmac, "whatsapp_api", "whatsapp_client")
+
     # Log incoming user message
     # Node is unknown right now, we will associate it with the state they were in
     current_node = await get_menu_session(from_number, Config.WA_MENU_SESSION_TIMEOUT)
