@@ -1,0 +1,7 @@
+-r requirements.txt
+
+# Development Tools
+pytest
+httpx[testing]
+ruff
+ipykernel

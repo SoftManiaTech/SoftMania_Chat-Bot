@@ -86,6 +86,15 @@ class Config:
     # Menu session timeout in seconds (default 30 minutes)
     WA_MENU_SESSION_TIMEOUT = int(os.getenv("WA_MENU_SESSION_TIMEOUT", "1800"))
 
+    # Application Environment
+    APP_ENV = os.getenv("APP_ENV", "production")
+
+    @classmethod
+    def is_dev(cls) -> bool:
+        """Returns True if running in local development mode, False for production."""
+        return cls.APP_ENV == "development"
+
+
     @classmethod
     def get_neo4j_graph(cls):
         """Returns the LangChain Neo4jGraph integration instance."""

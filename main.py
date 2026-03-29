@@ -64,13 +64,22 @@ def main():
 
     # 3. Start the production server
     # HF Spaces injects PORT=7860; Config reads it via os.getenv.
-    # reload=False is REQUIRED in production — the file watcher wastes ~50 MB RAM
-    # and can unexpectedly restart the app when temp files are written to disk.
+    is_dev = Config.is_dev()
+    print(f"🚀 Starting server in {'DEVELOPMENT' if is_dev else 'PRODUCTION'} mode")
+
     uvicorn.run(
         "src.api.server:app",
         host=Config.HOST,
         port=Config.PORT,
-        reload=False,
+        # Dev: hot-reload on file save. Prod: disabled (wastes ~50MB RAM).
+        reload=is_dev,
+        # Dev: verbose logs. Prod: warnings only.
+        log_level="debug" if is_dev else "warning",
+        # Dev: 1 worker (reload incompatible with multiple workers).
+        # Prod: use env override, default 1 (HF Spaces is single-container).
+        workers=1 if is_dev else int(os.getenv("WORKERS", "1")),
+        # Prod: disable access log spam. Dev: keep it on.
+        access_log=is_dev,
     )
 
 
